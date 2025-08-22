@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.syncfusion.com/ej2/dist/ej2.min.js"></script>
+    <link href="https://cdn.syncfusion.com/ej2/material.css" rel="stylesheet">
+    <title>Target Time Sheet</title>
+    <style>
+        .e-input-group input.e-input,
+        .e-float-input.e-input-group input,
+        .e-input-group.e-control-wrapper input.e-input,
+        .e-float-input.e-input-group.e-control-wrapper input,
+        .e-float-input input,
+        .e-float-input.e-control-wrapper input {
+            min-height: 30px !important;
+        }
+
+        .headerColor {
+            background-color: rgb(207, 226, 255) !important;
+            color: black !important;
+        }
+
+        .navbar {
+            border-bottom: gray !important;
+        }
+
+        .bg-danger {
+            background-color: rgb(234, 84, 85) !important;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar  navbar-light">
+        <a class="navbar-brand" href="#"><img src="{{url_for('static', filename='logo1.png')}}" align="middle"
+                style="height: 8vh;"></a>
+    </nav>
+    <div style="border-top: 2px;width: 100%;border-style:solid; margin-bottom: 10px;border-color: rgb(169, 166, 166);">
+    </div>
+    <div class="container-none">
+        {% block body %}
+        <div class="row" style="display: none;">
+            <div class="col-md-3">
+                <input id="datepicker" class="form-select" type="text">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select " id="whs">
+                    <option value="">-- Select Warehouse --- </option>
+                    {% for resp in result %}
+                    <option value="{{resp[0]}}"  >{{resp[0]}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- <div class="col-md-3">
+                <select id="lines" class="form-select " onblur="loadData();">
+                    <option value="">-- Select Line --- </option>           
+                </select>
+            </div> -->
+            
+        </div>
+        <div class="row pb-20"></div>  
+        <script>
+            var datepicker = new ej.calendars.DatePicker({ width: "100%", value: new Date(), format: 'yyyy-MM-dd' });
+            datepicker.appendTo('#datepicker');
+        </script>
+        <!-- <div class="row">
+            <ul class="nav nav-tabs" id="myTab">
+            </ul>
+        </div> -->
+        <div class="row">
+          <div class="col-md-6 col-lg-6">
+            <span class="badge bg-success" style="font-size: 22px;">Line 1</span>
+            <div class="table-responsive" id="t_data_line_one"  style="width: 100%; height: 40vh; overflow-y: scroll; " ></div>
+          </div>
+          <div class="col-md-6 col-lg-6" >
+            <span class="badge bg-success" style="font-size: 22px;">Line 2</span>
+            <div class="table-responsive" id="t_data_line_two" style="width: 100%; height: 40vh; overflow-y: scroll; "></div>
+          </div>
+          </div>
+          <div class="row" style="margin-bottom: 20px !important;"></div>
+          <div class="row">
+            <div class="col-md-6 col-lg-6">
+                <span class="badge bg-success" style="font-size: 22px;">Line 3</span>
+              <div class="table-responsive" id="t_data_line_three" style="width: 100%; height: 40vh; overflow-y: scroll; "></div>
+            </div>
+          <div class="col-md-6 col-lg-6" >
+            <span class="badge bg-success" style="font-size: 22px;">Line 4</span>
+            <div class="table-responsive" id="t_data_line_four" style="width: 100%; height: 40vh; overflow-y: scroll; "></div>
+          </div>
+        </div>
+        <div class="row">
+            <div class="row g-2 counts" id="counts">
+                <!-- <p>New Doc</p> -->
+                <div class="card" style="padding: 0%;">
+                    <div class="card-body" style="padding: 0%;">
+                        <div class="table-responsive" id="t_data">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        {% endblock %}
+        <input type="hidden" value="{{wh}}" id="wh" class="wh" />
+</body>
+
+</html>
+
+<script>
+    
+$(document).ready(function () { 
+    console.log($('#wh').val());
+    var text = $('#wh').val()
+    text = text.charAt(0).toUpperCase() + text.slice(1);
+    console.log(text);
+    $('#whs').val(text);
+    console.log($('#whs').val());
+    var ein = 0;
+    warehouse = $("#whs").val();
+    if(warehouse == "Charlotte"){
+        loadData("Line 1");
+        loadData("Z524");
+        loadData("Z210");
+        loadData("Z523");
+    }
+    else if(warehouse == "Bloomington"){
+      loadData("Z638");
+      loadData("Z637");
+      loadData("Z617");
+      loadData("Z621");
+    }
+    setInterval(function () {
+        // Code to be executed after the delay
+        // This could include any jQuery operations
+        ein = ein + 1;
+        console.log(warehouse);
+        if(warehouse == "Charlotte"){
+            if(ein == 1) {              
+              loadData("Line 1");
+            } else if (ein == 2) {        
+              loadData("Z210");
+            }else if (ein == 3) {            
+              loadData("Z428");
+            }else if (ein == 4) {              
+              loadData("Z523");
+            }
+        } else if(warehouse == "Bloomington"){
+            if(ein == 1) {
+                console.log(111)
+            } else if (ein == 2) {
+                loadData("Z638");
+            }else if (ein == 3) {
+                loadData("Z637");
+            }else if (ein == 4) {
+                loadData("Z621");
+            }
+        } 
+        
+        if(ein==4){
+            ein = 0;
+        }
+        
+    }, 10000);
+});
+
+    
+
+    $(document).on('click', '.nav-link', e => {
+        $('.nav-link').removeClass('active');
+        $($(e.target).addClass(' active'));
+        line = ($(e.target).attr("id"));
+        document.getElementById("t_data_line_one").innerHTML = "";
+        document.getElementById("t_data_line_two").innerHTML = "";
+        document.getElementById("t_data_line_three").innerHTML = "";
+        document.getElementById("t_data_line_four").innerHTML = "";
+        
+    });
+
+
+    function loadData(line) {
+        console.log(line);
+        var requestObject = {}
+        requestObject['warehouse'] = $("#whs").val()
+        requestObject['line'] = line
+        requestObject['date'] = $("#datepicker").val()
+        $.ajax({
+            type: "POST",
+            url: requestObject['warehouse']+"/getTargets/",
+            data: JSON.stringify(requestObject),
+            contentType: "application/json",
+            dataType: "json",
+            success: function (response) {
+                var tableArray = [];
+                var singleObjectArray = [];
+                var palletArraytargetData = [];
+                var t_hd = ''
+                var t_row = '';
+                var targetData = response['targetData'];
+                var pallet_timing = response['pallet_timing'];
+                var pallet_timing_ten = response['pallet_timing_ten'];
+                diff(targetData);
+                AvgtimeCalc(targetData);
+                getRemaings(targetData);
+                unitperCalc(targetData);
+                avgTimeTotalBuild(targetData);
+                console.log(pallet_timing);
+              
+                t_hd = t_hd + '<table class="table table-hover table-striped" border=1 >'
+                t_hd = t_hd + '<thead><th class="text-left text-warning headerColor">Unit Per Hr</th><th class="text-left text-warning headerColor">Item</th><th class="text-left text-warning headerColor">Pallet</th><th class="text-left text-warning headerColor">Piece</th><th class="text-left text-warning headerColor">Start Time</th><th class="text-left text-warning headerColor">End Time</th><th class="text-left text-warning headerColor">Math</th><th class="text-left text-warning headerColor">Time Per Piece</th><th class="text-left text-warning headerColor">Avg - Rolling 10</th><th class="text-left text-warning headerColor">Avg of Build</th></thead><tbody>'
+                t_close = '</tbody></table>';
+                lastTenUnitsScanned = [];
+                firstAverageCalculated = false;
+                totalUnitsScanned = 0;
+                avgTotalBuildperUnit = 0;
+                allAvgCalculator = [];
+                target = 0;
+                
+                if ($("#whs").val() == 'Charlotte' || $("#whs").val() == 'Bloomington') {
+                  ZoneTimeAdjust();
+                }
+
+                if (targetData.length <= 0) {
+                    t_row = "Record Not Found";
+                }
+                else {
+                    for (i = 0; i < targetData.length; i++) {
+                        timeTakenToScanUnit = avgCalc(targetData[i][3], targetData[i][4]);
+                        lastTenUnitsScanned.push(timeTakenToScanUnit);
+                        totalUnitsScanned += timeTakenToScanUnit;
+                        //console.log(totalUnitsScanned)
+                        if (lastTenUnitsScanned.length >= 10) {
+                            // console.log(lastTenUnitsScanned);
+                            if (firstAverageCalculated == false) {
+                                averageTimePerTenBuild = calculateAverage(lastTenUnitsScanned);
+                                firstAverageCalculated = true;
+                            } else {
+                                lastTenUnitsScanned.shift()
+                                averageTimePerTenBuild = calculateAverage(lastTenUnitsScanned);
+                            }
+
+                        } else {
+                            averageTimePerTenBuild = calculateAverage(lastTenUnitsScanned, lastTenUnitsScanned.length);
+                        }
+
+                        avgTotalBuildperUnit = totalUnitsScanned / (i + 1);
+                        //console.log(avgTotalBuildperUnit);
+                        if (targetData[i][6] > targetData[i][10]) {
+                            cl_name = 'badge bg-danger'
+                        } else {
+                            cl_name = 'badge bg-success'
+                        }
+                        if (targetData[i][8] > targetData[i][11]) {
+                            avgcl_name = 'badge bg-danger'
+                        } else {
+                            avgcl_name = 'badge bg-success'
+                        }
+                        if (targetData[i][15] > 3600) {
+                            totalavgcl_name = 'badge bg-danger'
+                        } else {
+                            totalavgcl_name = 'badge bg-success'
+                        }
+
+                        style = ""
+                        if (targetData[i][2] == 1) {
+                            style = "bg-info"
+                            t_row += '<tr class=" ' + style + '"><td colspan=10></td></tr>'
+
+                        }
+
+                        t_row += '<tr class="rows  "><td><span>' + targetData[i][5] + '</span></td><td><span>' + targetData[i][1] + '</span></td><td><span>' + targetData[i][0] + '</span></td><td><span>' + targetData[i][2] + '</span></td><td><span>' + ZoneTimeAdjust(targetData[i][3]) + '</span></td><td><span>' + ZoneTimeAdjust(targetData[i][4]) + '</span></td><td><span class="' + cl_name + '">' + ('0' + targetData[i][6]).slice(-2) + ' / ' + Math.round(pallet_timing[targetData[i][0]][i]['sec']) + ' </span></td><td><span class="' + cl_name + '">' + targetData[i][7] + '</span></td><td ><span class="' + pallet_timing_ten[targetData[i][0]][i]['color'] + '">' + pallet_timing_ten[targetData[i][0]][i]['time'] + '</span></td><td ><span class="' + pallet_timing[targetData[i][0]][i]['color'] + '">' + pallet_timing[targetData[i][0]][i]['time'] + '</span></td></tr>'
+                    }
+
+                }
+                if (line == 'Line 1' ) {
+                  document.getElementById("t_data_line_one").innerHTML ="";
+                  document.getElementById("t_data_line_one").innerHTML = t_hd + t_row + t_close
+                  var tbody = $('#t_data_line_one').children();                
+                  $(tbody).each(function (elem, index) {
+                    var arr = $.makeArray($("tr", this).detach());
+                    arr.reverse();
+                    $(this).append(arr);
+                  });
+                }
+                else if (line == 'Z210'  || line == 'Z638') {
+                  document.getElementById("t_data_line_two").innerHTML = "";
+                  document.getElementById("t_data_line_two").innerHTML = t_hd + t_row + t_close
+                  var tbody = $('#t_data_line_two').children();
+                  $(tbody).each(function (elem, index) {
+                    var arr = $.makeArray($("tr", this).detach());
+                    arr.reverse();
+                    $(this).append(arr);
+                  });
+                }
+                else if (line == 'Z428' || line == 'Z637') {
+                  document.getElementById("t_data_line_three").innerHTML = "";
+                  document.getElementById("t_data_line_three").innerHTML = t_hd + t_row + t_close
+                  var tbody = $('#t_data_line_three').children();
+                  $(tbody).each(function (elem, index) {
+                    var arr = $.makeArray($("tr", this).detach());
+                    arr.reverse();
+                    $(this).append(arr);
+                  });
+                }
+                else if (line == 'Z523' || line == 'Z621') {
+                  document.getElementById("t_data_line_four").innerHTML = "";
+                  document.getElementById("t_data_line_four").innerHTML = t_hd + t_row + t_close
+                   var tbody = $('#t_data_line_four').children();
+                  $(tbody).each(function (elem, index) {
+                    var arr = $.makeArray($("tr", this).detach());
+                    arr.reverse();
+                    $(this).append(arr);
+                  });
+                }               
+            },
+        });
+    }
+
+
+    function unitperCalc(targetData) {
+        for (k = 0; k < targetData.length; k++) {
+            unitperHr = (targetData[k][5] / 60)
+            unitpersec = (60 / unitperHr)
+            int10 = (unitpersec * 10);
+            targetData[k].push(unitpersec)
+            targetData[k].push(int10)
+            targetData[k].push(formatSeconds(unitpersec))
+            targetData[k].push(formatSeconds(int10))
+        }
+
+    }
+    RemaininAVg = 0
+    function getRemaings(targetData) {
+        remining = (targetData.length / 10).toString();
+        lastString = remining.split('.')
+        for (i = ((targetData.length) - (1)); i >= ((targetData.length) - (lastString[1])); i--) {
+            RemaininAVg += avgCalc(targetData[i][3], targetData[i][4])
+        }
+        for (j = ((targetData.length) - (1)); j >= ((targetData.length) - (lastString[1])); j--) {
+            targetData[j].push(RemaininAVg)
+            targetData[j].push(formatSeconds(RemaininAVg))
+        }
+    }
+
+    AvgtotalCal = 0;
+    function avgTimeTotalBuild(targetData) {
+        for (i = 0; i < targetData.length; i++) {
+            AvgtotalCal += avgCalc(targetData[i][3], targetData[i][4])
+        }
+        for (j = 0; j < targetData.length; j++) {
+            // targetData[j].push(AvgtotalCal)
+            targetData[j].push(formatSeconds(AvgtotalCal))
+            targetData[j].push(AvgtotalCal)
+        }
+    }
+
+    AvgtotalBuildCal = 0;
+    function avgTimeTotalBuild(targetData) {
+        for (i = 0; i < targetData.length; i++) {
+            AvgtotalBuildCal += avgCalc(targetData[i][3], targetData[i][4])
+        }
+        for (j = 0; j < targetData.length; j++) {
+            // targetData[j].push(AvgtotalCal)
+            targetData[j].push(formatSeconds(AvgtotalBuildCal))
+            targetData[j].push(AvgtotalBuildCal)
+        }
+    }
+
+    total10Cal = 0;
+    function AvgtimeCalc(targetData) {
+        for (i = 0; i < targetData.length; i++) {
+            total10Cal += avgCalc(targetData[i][3], targetData[i][4])
+            if ((i % 10) === 0) {
+                if (i != 0) {
+                    for (j = (i - 1); j >= (i - 10); j--) {
+                        targetData[j].push(total10Cal)
+                        targetData[j].push(formatSeconds(total10Cal))
+                    }
+                }
+                total10Cal = 0;
+            }
+        }
+    }
+
+    function avgCalc(start, end) {
+        var a = start.split(':');
+        var b = end.split(':');
+        var startseconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
+        var endseconds = (+b[0]) * 60 * 60 + (+b[1]) * 60 + (+b[2]);
+        diffSeconds = (endseconds - startseconds);
+        return diffSeconds
+    }
+
+    function ZoneTimeAdjust(time) {
+            console.log(time);
+            if(time != undefined){
+                var a = time.split(':');
+                  var incTime = 0;
+                if ($("#whs").val() == 'Charlotte') {
+                    incTime = 3;
+                }
+                if ($("#whs").val() == 'Bloomington') {
+                    incTime = 2;
+                }
+                console.log(a);
+                hr = Number(a[0]) + Number(incTime);
+                mn = a[1];
+                sec = a[2];
+                console.log(Number(a[0]) + Number(incTime));
+                modifiedTime = hr + ':' + mn + ':' + sec;
+                return modifiedTime;
+            }
+            else{
+                return time;
+            }
+        }
+
+
+    function diff(targetData) {
+        // var start = '02:04:33'; 
+        // var end = '03:07:35';  
+        for (m = 0; m < targetData.length; m++) {
+            var a = targetData[m][3].split(':');
+            var b = targetData[m][4].split(':');
+            var startseconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
+            var endseconds = (+b[0]) * 60 * 60 + (+b[1]) * 60 + (+b[2]);
+            diffSeconds = (endseconds - startseconds);
+            targetData[m].push(diffSeconds);
+            targetData[m].push(formatSeconds(diffSeconds));
+        }
+    }
+
+    function calculateAverage(scannedUnits, n = 10) {
+
+        // Find sum of array element
+        var sum = 0;
+        for (var i = 0; i < n; i++) sum += scannedUnits[i];
+
+        return parseFloat(sum / n);
+    }
+
+    const formatSeconds = s => (new Date(s * 1000)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0];
+
+</script>

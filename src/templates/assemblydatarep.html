@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    
+    <script src="https://cdn.syncfusion.com/ej2/dist/ej2.min.js"></script>
+    <title>Contec Assembly</title>
+</head>
+<style>
+  body {
+    
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    background-color: #f1f1f1;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .container {
+    display: flex;
+    font-family: arial;
+    font-size: 24px;
+    margin: 15px;
+    width: 11%;
+    height:  10%;
+    /*outline: dashed 1px black;
+     Setup */
+    position: relative;
+    float:left;
+  }
+  
+  .child {
+    width: 50%;
+    height: 50%; 
+    /* Center vertically and horizontally */
+    position: absolute;
+    top: 50%;
+    left: 20%;
+    margin: -25px 0 0 -25px; /* Apply negative top and left margins to truly center the element */
+  }
+  .counts {
+    width : 100%;
+    
+  }
+  .white {
+
+  }
+  .counts1 {
+    width : 100%;
+    
+  }
+  .fn-inner {
+    font-size: 70px;
+  }
+
+  
+  .table-hover > tbody > tr.danger:hover > td {
+    background-color: red !important;
+    }
+    .table-hover > tbody > tr.warning:hover > td {
+    background-color: yellow !important;
+    }
+    .table-hover > tbody > tr.success:hover > td {
+    background-color: blue !important;
+    }
+  
+    .table-hover 
+    {
+      font-weight: bold;
+      font-size: 30px;
+    }
+  
+    .Total {
+      font-size: 50px;
+      color: #0d6efd !important;
+    }
+    .bg-warning {
+      font-size: 50px;
+    }
+
+</style>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.syncfusion.com/ej2/material.css" rel="stylesheet">
+<body>  
+    <div>Assembly Report</div>
+    <input id="datepicker" class="datepicker" type="text" onblur="getShippingCount(1);">
+
+    <script>
+        var datepicker = new ej.calendars.DatePicker({ width: "255px", value: new Date(), format: 'yyyy-MM-dd' });
+        datepicker.appendTo('#datepicker');
+    </script>
+    <select id="whs">
+        <option select="charlotte">Charlotte</option>
+        <option select="bloomington">Bloomington</option>
+        <option select="brownsville">Brownsville</option>
+        <option select="sanjose">Sanjose</option>
+    </select>
+    <div class="table-responsive" id="t_data">
+       
+    </div>
+    <div class="container">
+      <div class="row g-2 counts" id="counts" >
+         
+      </div>
+    </div>
+      
+ 
+    <input type="hidden" value="{{wh}}" id="wh" class="wh" />
+     
+</body>
+</html>
+
+<script> 
+  $(function() {
+    $('#whs').bind('change', function () { // bind change event to select
+        var url = $(this).val(); // get selected value
+        if (url != '') { // require a URL
+            window.location = url; // redirect
+        }
+        return false;
+    });
+    randomIntFromInterval = function(min, max) { // min and max included 
+        return Math.floor(Math.random() * (max - min + 1) + min)
+    }
+
+    getShippingCount = function(e) {
+        fnt = ['text-primary', 'text-success', 'text-danger', 'text-warning', 'text-primary', 'text-danger']
+        bclr = [
+            'rgba(255, 99, 132, 0.2)',
+            'rgba(255, 159, 64, 0.2)',
+            'rgba(255, 205, 86, 0.2)',
+            'rgba(75, 192, 192, 0.2)',
+            'rgba(54, 162, 235, 0.2)',
+            'rgba(153, 102, 255, 0.2)',
+            'rgba(201, 203, 207, 0.2)',
+            'rgba(255, 205, 86, 0.2)',
+            'rgba(75, 192, 192, 0.2)',
+            'rgba(54, 162, 235, 0.2)',
+            'rgba(75, 192, 192, 0.2)',
+            'rgba(54, 162, 235, 0.2)'
+        ]
+        bclrbr = [
+            'rgb(255, 99, 132)',
+            'rgb(255, 159, 64)',
+            'rgb(255, 205, 86)',
+            'rgb(75, 192, 192)',
+            'rgb(54, 162, 235)',
+            'rgb(153, 102, 255)',
+            'rgb(201, 203, 207)',
+            'rgb(54, 162, 235)',
+            'rgb(153, 102, 255)',
+            'rgb(201, 203, 207)',
+            'rgb(153, 102, 255)',
+            'rgb(201, 203, 207)'
+        ]
+        $.ajax({
+            type: "GET",
+                url: "assemblydata/wh-assemblynew/" + $('.wh').val()+'/'+ $('.datepicker').val(),
+            data: {},
+            contentType: "application/json",
+            dataType: "json",
+            success: function(response) {
+                console.log(response)
+
+                var all_whs_total = response['all_whs_total']
+                var all_whs_total_per = response['all_whs_total_per']
+                var tol_target = response['tol_target']
+
+
+                var all_whs = response['all_whs'].sort()
+                var t_hd = ''
+                var wh_rec = response['wh_rec']
+                var wh_rec_per = response['wh_rec_per']
+                for (let w = 0; w < all_whs.length; w++) {
+                    t_hd = t_hd + '<table class="table table-hover table-light" >'
+                    var ahrs = response['hrs_data']
+                    
+                    t_hd = t_hd + '<tr><th colspan=' + (ahrs.length + 2) + ' class="text-center text-warning">' + all_whs[w] + ' Assembly</th></tr>'
+                    t_hd = t_hd + '<tr  ><th class="bg-primary text-light">Users</th>'
+                    for (let s = 0; s < ahrs.length; s++) {
+                        tm_ = ahrs[s]
+                        if (tm_ <= 12) {
+                            tm_ = tm_ + ' AM'
+                        } else {
+                            tm_ = tm_ - 12
+                            tm_ = tm_ + ' PM'
+                        }
+                        t_hd = t_hd + '<th class="bg-primary text-light">' + tm_ + '</th>'
+
+                    }
+
+                    t_hd = t_hd + '<th class="bg-primary"></th></tr>'
+
+                    var shp_tday = response['user_data'][all_whs[w]]
+                    var shp_desc_tday = response['user_desc_data'][all_whs[w]]
+ 
+                    var cla = "bg-primary"
+                    total_e_d = 0
+                    t_hd = t_hd + '<tbody><tr class=' + cla + '>'
+                    for (let ss = 0; ss < shp_tday.length; ss++) {
+                        t_hd = t_hd + '<td>' + shp_tday[ss] + '('+shp_desc_tday[ss]+')</td>'
+                        total_d = 0
+                        so1_per_total = 0
+                        so1_per_total_cnt = 0
+                        for (let s = 0; s < ahrs.length; s++) {
+                            if (wh_rec[all_whs[w]][shp_tday[ss]][ahrs[s]] == undefined) {
+                                so1 = 0
+                            } else {
+                                so1 = wh_rec[all_whs[w]][shp_tday[ss]][ahrs[s]]
+                            }
+                            text_light = 'text-success'
+                            if (wh_rec_per[all_whs[w]][shp_tday[ss]][ahrs[s]] == undefined) {
+                                so1_per = 0
+                            } else {
+                                so1_per = wh_rec_per[all_whs[w]][shp_tday[ss]][ahrs[s]]
+                            }
+                            so1_per_total = so1_per_total + so1_per
+                            so1_per_total_cnt = so1_per_total_cnt + 1
+                            if(so1_per<100) {
+                                text_light = 'text-danger'
+                            }
+                            total_d = total_d + so1
+                            t_hd = t_hd + '<td >' + so1 + ' <span class="'+text_light+'"> ('+so1_per+'%) <span></td>'
+                        }
+                        if (cla == 'bg-primary') {
+                            cla = "bg-success"
+                        } else {
+                            cla = "bg-primary"
+                        }
+                        clo = ""
+                        if ((shp_tday.length - 2) == ss) {
+                            clo = ''
+                            console.log(clo)
+                        }
+                        total_e_d = total_e_d + total_d
+                        so1_per_total = Math.round((so1_per_total/so1_per_total_cnt))
+                        text_light = 'text-success'
+                        if (so1_per_total<100){
+                            text_light = 'text-danger'
+                        }
+                        
+                        t_hd = t_hd + '<td class="Percentage" >' + total_d + ' <span class="'+text_light+'"> ('+so1_per_total+'%)<span></td></tr><tr class="">'
+                    }
+                   
+                    
+                    t_hd = t_hd + '</tr><tr><td class="Total" >Total</td>'
+                    for (let s = 0; s < ahrs.length; s++) {
+                        if (all_whs_total[all_whs[w]][ahrs[s]] == undefined) {
+                            so1 = 0
+                        } else {
+                            so1 = all_whs_total[all_whs[w]][ahrs[s]]
+                        }
+                        t_hd = t_hd + '<td class="Total">' + so1 + '</td>'
+                    }
+                    t_hd = t_hd + '<td class="Total">' + total_e_d + '</td>'
+                    t_hd = t_hd + '</tr></tbody></table><div style="clear:both;height:100px;"></div>'
+                }
+
+                document.getElementById("t_data").innerHTML = t_hd
+
+                today = response['today']
+                onehr = response['onehr']
+                var d = ''
+                var labels = []
+                var lo = {}
+                data_set = []
+                bclr_ar = []
+                bclrbr_ar = []
+                for (let i = 0; i < today.length; i++) {
+
+                    labels.push(today[i]['station'])
+
+                    data_set.push(today[i]['count'])
+                    bclrbr_ar.push(bclr[randomIntFromInterval(0, 10)])
+                    bclr_ar.push(bclrbr[randomIntFromInterval(0, 10)])
+                    d = d + '<div class="col-16 col-md-2 order-2 order-md-1"> ' +
+                        '<div class="bg-light text-center p-2 text-dark">' + today[i]['station'] + '</br><span class="' + fnt[randomIntFromInterval(0, 5)] + ' fn-inner">' + today[i]['count'] + '<span></div>' +
+                        '</div>'
+                }
+
+                document.getElementById("counts").innerHTML = d;
+
+
+            },
+        });
+
+    };
+
+ 
+
+    getShippingCount(1);
+    $('#whs').val($('#wh').val());
+}.call(this));
+</script>

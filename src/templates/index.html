@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Contec Shipment</title>
+</head>
+<style>
+  body {
+    
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    background-color: #f1f1f1;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .container {
+    display: flex;
+    font-family: arial;
+    font-size: 24px;
+    margin: 15px;
+    width: 11%;
+    height:  10%;
+    /*outline: dashed 1px black;
+     Setup */
+    position: relative;
+    float:left;
+  }
+  
+  .child {
+    width: 50%;
+    height: 50%; 
+    /* Center vertically and horizontally */
+    position: absolute;
+    top: 50%;
+    left: 20%;
+    margin: -25px 0 0 -25px; /* Apply negative top and left margins to truly center the element */
+  }
+  .counts {
+    width : 100%;
+    
+  }
+  .white {
+
+  }
+  .counts1 {
+    width : 100%;
+    
+  }
+  .fn-inner {
+    font-size: 70px;
+  }
+  .bld {
+    font-weight: bold; 
+    color: #dc3545 !important;
+  }
+  th {
+    width: 10%;
+  }
+
+  .table-hover > tbody > tr.danger:hover > td {
+  background-color: red !important;
+  }
+  .table-hover > tbody > tr.warning:hover > td {
+  background-color: yellow !important;
+  }
+  .table-hover > tbody > tr.success:hover > td {
+  background-color: blue !important;
+  }
+
+  .table-hover 
+  {
+    font-weight: bold;
+    font-size: 30px;
+  }
+
+  .Total {
+    font-size: 50px;
+    color: #dc3545 !important;
+  }
+
+</style>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<body> 
+    <div class="bg-primary p-2 text-light">Shipping Today</div>
+    <div class="table-responsive">
+      <table class="table table-hover table-dark" id="t_data">
+        
+      </table>
+    </div>
+  
+    <div class="container">
+      <div class="row g-2 counts" id="counts" >
+         
+      </div>
+    </div>
+    <span id="load_data"></span> 
+    <div style="clear:both;"></div>
+    <div class="container">
+      <div class="row g-2 counts1" id="counts1" >
+         
+      </div>
+    </div>
+    <div style="clear:both;"></div>
+    
+    <div class="container">
+      <div class="row" id="counts1" >
+        
+        <div class="col-12 col-md-6 order-2 order-md-1" id="g1"> 
+          <canvas id="myChart"></canvas> 
+        </div>
+        <div class="col-12 col-md-6 order-2 order-md-1" id="g2">
+          <canvas id="myChart1"></canvas> 
+          </div>
+      </div>
+    </div>
+ 
+    <input type="hidden" value="{{wh}}" id="wh" class="wh" />
+     
+</body>
+</html>
+
+<script> 
+    $(function() {
+      randomIntFromInterval = function(min, max) { // min and max included 
+        return Math.floor(Math.random() * (max - min + 1) + min)
+      }
+        getShippingCount = function(e) {
+              fnt = ['text-primary','text-success','text-danger', 'text-warning' ,'text-primary','text-danger']
+              fnt_bg = ['bg-primary text-light','bg-success text-light', 'bg-warning text-light' ,'bg-primary text-light','bg-danger text-light']
+              bclr = [
+              'rgba(255, 99, 132, 0.2)',
+              'rgba(255, 159, 64, 0.2)',
+              'rgba(255, 205, 86, 0.2)',
+              'rgba(75, 192, 192, 0.2)',
+              'rgba(54, 162, 235, 0.2)',
+              'rgba(153, 102, 255, 0.2)',
+              'rgba(201, 203, 207, 0.2)',
+              'rgba(255, 205, 86, 0.2)',
+              'rgba(75, 192, 192, 0.2)',
+              'rgba(54, 162, 235, 0.2)'
+            ]
+            bclrbr = [
+            'rgb(255, 99, 132)',
+            'rgb(255, 159, 64)',
+            'rgb(255, 205, 86)',
+            'rgb(75, 192, 192)',
+            'rgb(54, 162, 235)',
+            'rgb(153, 102, 255)',
+            'rgb(201, 203, 207)',
+            'rgb(54, 162, 235)',
+            'rgb(153, 102, 255)',
+            'rgb(201, 203, 207)'
+          ]
+            $.ajax({
+                type: "GET",
+                url: "wh-data/"+$('.wh').val(),
+                data: {},
+                contentType: "application/json",
+                dataType: "json",
+                success: function(response) { 
+                  console.log(response)
+                  today = response['today']
+                  
+                  var d = ''
+                  var labels = []
+                  var lo = {}
+                  data_set = []
+                  bclr_ar = []
+                  bclrbr_ar = []
+                  var bld = ''
+                  var name = ''
+                  for (let i = 0; i < today.length; i++) {
+                    if (today[i]['station'] == 'Total'){
+                      bld = ' bld'
+                      name = ''
+                    } else {
+                      bld = ''
+                      name  =  today[i]['station'] +'</br>'
+                    }
+                    labels.push(today[i]['station'])
+                     
+                    data_set.push(today[i]['count'])
+                    bclrbr_ar.push(bclr[i])
+                    bclr_ar.push(bclrbr[i])
+                     d = d + '<div class="col-16 col-md-2 order-2 order-md-1"> '+
+                      '<div class="bg-light text-center p-2 text-dark">'+name+'<span class="'+fnt[i]+' fn-inner '+bld+'">'+today[i]['count']+'<span></div>'+
+                    '</div>'
+                  }
+                  
+                  document.getElementById("counts").innerHTML=d;
+                  
+                  if(e==1){
+                  const ctx = document.getElementById('myChart');
+                   
+                  new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                      labels: labels,
+                      datasets: [{"label": "Today", "data":data_set, borderWidth: 1, backgroundColor:bclr_ar, borderColor:bclr_ar }],
+                      
+                    },
+                    options: {
+                      scales: {
+                        y: {
+                          beginAtZero: true
+                        }
+                      },
+                      tooltips: {
+                          enabled: true
+                      },
+                      hover: {
+                          animationDuration: 1
+                      },
+                    }
+                  });
+                }
+                  bclr = [
+                  'rgba(255, 205, 86, 0.2)',
+                  'rgba(75, 192, 192, 0.2)',
+                  'rgba(54, 162, 235, 0.2)',
+                  'rgba(255, 99, 132, 0.2)',
+                  'rgba(255, 159, 64, 0.2)',
+
+                  'rgba(153, 102, 255, 0.2)',
+                  'rgba(201, 203, 207, 0.2)',
+                  'rgba(255, 205, 86, 0.2)',
+                  'rgba(75, 192, 192, 0.2)',
+                  'rgba(54, 162, 235, 0.2)'
+                  ]
+                  bclrbr = [
+                  'rgb(255, 205, 86)',
+                  'rgb(75, 192, 192)',
+                  'rgb(255, 99, 132)',
+                  'rgb(255, 159, 64)',
+
+                  'rgb(54, 162, 235)',
+                  'rgb(153, 102, 255)',
+                  'rgb(201, 203, 207)',
+                  'rgb(54, 162, 235)',
+                  'rgb(153, 102, 255)',
+                  'rgb(201, 203, 207)'
+                  ]
+                  var d = ''
+                  var labels = []
+                  var lo = {}
+                  data_set = []
+                  bclr_ar = []
+                  bclrbr_ar = []
+                  var d1 = '' 
+                  var bld = ''
+                  var name = ''
+                  hrs = response['hrs']
+                  ahrs = response['ahrs']
+                  var t_hd = '<tr><th>Station</th>'
+                  var gm = ''
+                  for (let s = 0; s < ahrs.length; s++) {
+                    tm_ = ahrs[s]
+                    if (tm_ <= 12){
+                      tm_ = tm_ + ' AM'
+                    } else{
+                      tm_ = tm_ - 12
+                      tm_ = tm_ + ' PM'
+                    }
+                    t_hd = t_hd + '<th>'+tm_+'</th>' 
+                    gm = gm + '<div style="clear:both;"></div>'+
+                    '<div class="'+fnt_bg[randomIntFromInterval(0, 4)]+' p-2">'+tm_+'</div>'+
+                    '<div style="clear:both;"></div>'+
+                    '<div class="container">'+
+                    '<div class="row g-2 counts1" id="counts1'+s+'" >'+
+                    '</div>'+
+                    '</div>'+
+                    '<div style="clear:both;"></div>'
+                  } 
+
+                  t_hd = t_hd + '<th>Total</th></tr>'
+
+                  
+                document.getElementById("load_data").innerHTML = gm
+                
+                var shp_tday = response['shp_tday'].sort()
+                
+                var cla="bg-primary"
+                var t_bd = t_hd + '<tbody><tr class='+cla+'>'
+                for (let ss = 0; ss < shp_tday.length; ss++) { 
+                  t_bd = t_bd + '<td>'+shp_tday[ss]+'</td>' 
+                  total_d = 0
+                  for (let s = 0; s < ahrs.length; s++) { 
+                    if(hrs[ahrs[s]][shp_tday[ss]] == undefined) {
+                      so1 = 0
+                    } else {
+                      so1 = hrs[ahrs[s]][shp_tday[ss]]
+                    }
+                    total_d = total_d + so1
+                    t_bd = t_bd + '<td>'+so1+'</td>'
+                  }
+                  if(cla=='bg-primary') {
+                    cla="bg-success"
+                  } else {
+                    cla="bg-primary"
+                  }
+                  clo = ""
+                  if((shp_tday.length-2) == ss) {
+                    clo = ' Total'
+                    console.log(clo)
+                  }
+                  t_bd = t_bd + '<td class="Total">'+total_d+'</td></tr><tr class="'+cla+' '+clo+'">'
+                } 
+                t_bd = t_bd + '</tr></tbody>'
+
+                document.getElementById("t_data").innerHTML = t_bd
+
+                var so1 =0 
+                   for (let i = 0; i < ahrs.length; i++) {
+                    
+                     today = hrs[ahrs[i]]
+                     d1 = '' 
+                     for (let s = 0; s < shp_tday.length; s++) { 
+                       
+                      
+                      if (shp_tday[s] !== undefined) {
+
+                       if (today[shp_tday[s]] === undefined) {
+                        so1 = 0
+                       } else{
+                        so1 = today[shp_tday[s]]
+                       }
+                        
+                      
+                      if (shp_tday[s] == 'Total'){
+                        bld = ' bld'
+                        name = ''
+                      } else {
+                        bld = ''
+                        name  =  shp_tday[s] +'</br>'
+                      } 
+                   
+                       d1 = d1 + '<div class="col-12 col-md-2 order-2 order-md-1"> '+
+                        '<div class="bg-light text-center p-2 text-dark">'+name+'<span class="'+fnt[s]+' fn-inner '+bld+'">'+so1+'<span></div>'+
+                      '</div>' 
+                        }
+                        
+                      }
+                      document.getElementById("counts1"+i).innerHTML = d1 
+                    
+                    
+                    
+                  }  
+                   
+
+                },
+            });
+
+        };  
+        
+
+        window.setTimeout( function() {
+          getShippingCount(0);
+        }, 180000);
+
+        getShippingCount(1);
+        window.setTimeout( function() {
+          window.location.reload();
+        }, 300000);
+}.call(this)); 
+</script>

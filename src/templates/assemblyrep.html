@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>    
+    <script src="https://cdn.syncfusion.com/ej2/dist/ej2.min.js"></script>
+    <title>Contec Assembly</title>
+</head>
+<style>
+  body {
+    
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    background-color: #f1f1f1;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .container {
+    display: flex;
+    font-family: arial;
+    font-size: 24px;
+    margin: 15px;
+    width: 11%;
+    height:  10%;
+    /*outline: dashed 1px black;
+     Setup */
+    position: relative;
+    float:left;
+  }
+  
+  .child {
+    width: 50%;
+    height: 50%; 
+    /* Center vertically and horizontally */
+    position: absolute;
+    top: 50%;
+    left: 20%;
+    margin: -25px 0 0 -25px; /* Apply negative top and left margins to truly center the element */
+  }
+  .counts {
+    width : 100%;
+    
+  }
+  .white {
+
+  }
+  .counts1 {
+    width : 100%;
+    
+  }
+  .fn-inner {
+    font-size: 70px;
+  }
+
+  
+  .table-hover > tbody > tr.danger:hover > td {
+    background-color: red !important;
+    }
+    .table-hover > tbody > tr.warning:hover > td {
+    background-color: yellow !important;
+    }
+    .table-hover > tbody > tr.success:hover > td {
+    background-color: blue !important;
+    }
+  
+    .table-hover 
+    {
+      font-weight: bold;
+      font-size: 24px;
+    }
+  
+    .Total {
+      font-size: 50px;
+      color: #0d6efd !important;
+      text-align: center;
+    }
+    .bg-warning {
+      font-size: 50px;
+    }
+    .col-4{
+        flex: 1;
+    }
+
+</style>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<link href="https://cdn.syncfusion.com/ej2/material.css" rel="stylesheet">
+<style>
+    #chartdiv {
+      width: 50%;
+      height: 500px;
+    }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Chart code -->
+
+<!-- HTML -->
+
+<body> 
+    <nav class="navbar navbar-dark bg-primary flex">
+        <a class="nav-link p-2" href="#">Assembly Report</a>
+    </nav>
+    Warehouse
+    <select id="whs">
+        <option select="charlotte">Charlotte</option>
+        <option select="bloomington">Bloomington</option>
+        <option select="brownsville">Brownsville</option>
+        <option select="sanjose">Sanjose</option>
+    </select>
+    Date
+    <input id="datepicker" class="datepicker" type="text" onblur="getShippingCount(1);">
+    <script>
+        var datepicker = new ej.calendars.DatePicker({ width: "255px", value: new Date(), format: 'yyyy-MM-dd' });
+        // var datepicker = new ej.calendars.DatePicker({ width: "255px", value: '2024-06-20', format: 'yyyy-MM-dd' });
+        datepicker.appendTo('#datepicker');
+    </script>
+    <div class="row g-2 counts" id="counts"></div>
+    
+    <div class="col-12">
+        <div class="card col-12 my-2">
+            <div class="card-header text-primary">
+                <h4>Line Scanned Units</h4>
+            </div>
+            <div class="card-body row" >
+                <div class="card col-4 " style="margin-top: 25px;" id="linecharts"> 
+                        <canvas id="chartId"></canvas>                     
+                </div>
+                <div class="card col-4 inner-1" id="inner-1" style="margin-top: 25px;"></div>
+                <div class="card col-4 inner-1" id="inner-1" style="margin-top: 25px;"></div>
+                <div class="card col-4 inner-2" id="inner-2" style="margin-top: 25px;"></div>
+                <div class="card col-4 inner-3" id="inner-3" style="margin-top: 25px;" ></div>
+                <div class="card col-4 inner-4" id="inner-4" style="margin-top: 25px;" ></div>
+                <div class="card col-4 inner-5" id="inner-5" style="margin-top: 25px;" ></div>
+                <div class="card col-4 inner-6" id="inner-6" style="margin-top: 25px;" ></div>
+                <div class="card col-4 inner-7" id="inner-7" style="margin-top: 25px;" ></div>
+                <div class="card col-4 inner-8" id="inner-8" style="margin-top: 25px;"></div>
+                <div class="card col-4 inner-9" id="inner-9" style="margin-top: 25px;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="table-responsive card text-primary" id="t_data"></div>
+    <div class="table-responsive card text-primary" id="timesheet-data"></div>
+    
+      
+ 
+    <input type="hidden" value="{{wh}}" id="wh" class="wh" />
+     
+</body>
+</html>
+
+<script> 
+  $(function() {
+    $('#whs').bind('change', function () { // bind change event to select
+        var url= $(this).val(); // get selected value
+        if (url != '') { // require a URL
+            window.location = url; // redirect
+        }
+        return false;
+    });
+    teamChart = '';
+    lineChart = '';
+    relodurl = '';
+    randomIntFromInterval = function(min, max) { // min and max included 
+        return Math.floor(Math.random() * (max - min + 1) + min)
+    }
+    chartData = {};
+    getShippingCount = function(e) {
+        document.getElementById("timesheet-data").innerHTML ='';
+        fnt = ['text-primary', 'text-success', 'text-danger', 'text-warning', 'text-primary', 'text-danger']
+        bclr = [
+            'rgba(255, 99, 132, 0.2)',
+            'rgba(255, 159, 64, 0.2)',
+            'rgba(255, 205, 86, 0.2)',
+            'rgba(75, 192, 192, 0.2)',
+            'rgba(54, 162, 235, 0.2)',
+            'rgba(153, 102, 255, 0.2)',
+            'rgba(201, 203, 207, 0.2)',
+            'rgba(255, 205, 86, 0.2)',
+            'rgba(75, 192, 192, 0.2)',
+            'rgba(54, 162, 235, 0.2)',
+            'rgba(75, 192, 192, 0.2)',
+            'rgba(54, 162, 235, 0.2)'
+        ]
+        bclrbr = [
+            'rgb(255, 99, 132)',
+            'rgb(255, 159, 64)',
+            'rgb(255, 205, 86)',
+            'rgb(75, 192, 192)',
+            'rgb(54, 162, 235)',
+            'rgb(153, 102, 255)',
+            'rgb(201, 203, 207)',
+            'rgb(54, 162, 235)',
+            'rgb(153, 102, 255)',
+            'rgb(201, 203, 207)',
+            'rgb(153, 102, 255)',
+            'rgb(201, 203, 207)'
+        ]
+        $.ajax({
+            type: "GET",
+            url: "assemblydata/wh-assemblynew/" + $('.wh').val()+'/'+ $('.datepicker').val(),
+            data: {},
+            contentType: "application/json",
+            dataType: "json",
+            success: function(response) {
+                console.log(response);
+                chartData = response;
+                if(chartData['all_whs'].length == 0){
+                    // alert("No Record Found")  
+                    for(let i=1;i<=9;i++){
+                        document.getElementById("inner-"+i).innerHTML = '';  
+                    }
+                }               
+                chartData['total_target'] = response['tol_target'];
+                var all_whs_total = response['all_whs_total']
+                var all_whs_total_per = response['all_whs_total_per']
+                var tol_target = response['tol_target']
+                initializeTeamChart()              
+                var all_whs = response['all_whs'].sort()
+                var t_hd = ''
+                var wh_rec = response['wh_rec']
+                var wh_rec_per = response['wh_rec_per']
+                var wh_rec_per_cnt = response['wh_rec_per_cnt']
+                var items = response['items']
+                var items_target = response['items_target']
+                for (let w = 0; w < all_whs.length; w++) {
+                    t_hd = t_hd + '<div class="card"><div class="card-header text-center fw-bold text-info">' + all_whs[w] + ' Assembly</div>'
+                    t_hd = t_hd + '<table class="table table-hover table-bordered table-striped" >'
+                    var ahrs = response['hrs_data']
+                    t_hd = t_hd + '<tr  ><th class="bg-primary text-light">Users</th>'
+                    for (let s = 0; s < ahrs.length; s++) {
+                        tm_ = ahrs[s]
+                        if (tm_ <= 12) {
+                            tm_ = tm_ + ' AM'
+                        } else {
+                            tm_ = tm_ - 12
+                            tm_ = tm_ + ' PM'
+                        }
+                        t_hd = t_hd + '<th class="bg-primary text-light">' + tm_ + '</th>'
+
+                    }
+
+                    t_hd = t_hd + '<th class="bg-primary text-light"></th></tr>'
+
+                    var shp_tday = response['user_data'][all_whs[w]]
+
+                    console.log(shp_tday)
+                    
+                    var cla = ""
+                    total_e_d = 0
+                    t_hd = t_hd + '<tbody><a><tr class=' + cla + '>'
+                    for (let ss = 0; ss < shp_tday.length; ss++) {
+                        t_hd = t_hd + '<td><a style="cursor:pointer;">' + shp_tday[ss] + '</a></td>'
+                        total_d = 0
+                        so1_per_total = 0
+                        so1_per_total_cnt = 0
+                        for (let s = 0; s < ahrs.length; s++) {
+                            if (wh_rec[all_whs[w]][shp_tday[ss]][ahrs[s]] == undefined) {
+                                so1 = 0
+                            } else {
+                                so1 = wh_rec[all_whs[w]][shp_tday[ss]][ahrs[s]]
+                            }
+                            text_light = 'text-success'
+                            if (wh_rec_per[all_whs[w]][shp_tday[ss]][ahrs[s]] == undefined) {
+                                so1_per = 0
+                            } else {
+                                data_cnt = wh_rec_per_cnt[all_whs[w]][shp_tday[ss]][ahrs[s]];
+                                
+                                if (items[all_whs[w]][shp_tday[ss]][ahrs[s]] !== undefined) {
+                                    if(items[all_whs[w]][shp_tday[ss]][ahrs[s]].length == 1){
+                                        data_cnt = items_target[all_whs[w]][shp_tday[ss]][ahrs[s]][items[all_whs[w]][shp_tday[ss]][ahrs[s]][0]]
+                                        
+                                    }
+                                }
+                                
+                                so1_per = Math.round(wh_rec_per[all_whs[w]][shp_tday[ss]][ahrs[s]]*100 / data_cnt)
+                            }
+                            so1_per_total = so1_per_total + so1_per
+                            so1_per_total_cnt = so1_per_total_cnt + 1
+                            if(so1_per<100) {
+                                text_light = 'text-danger'
+                            }
+                            total_d = total_d + so1 
+                            
+                            t_hd = t_hd + '<td >' + so1 + ' <span class="'+text_light+'"> ('+so1_per+'%) <span></td>'
+                        }
+                        if (cla == 'bg-primary') {
+                            cla = "bg-success"
+                        } else {
+                            cla = "bg-primary"
+                        }
+                        clo = ""
+                        if ((shp_tday.length - 2) == ss) {
+                            clo = ''
+                            console.log(clo)
+                        }
+                        total_e_d = total_e_d + total_d
+                        so1_per_total = Math.round((so1_per_total/so1_per_total_cnt))
+                        text_light = 'text-success'
+                        if (so1_per_total<100){
+                            text_light = 'text-danger'
+                        }
+                        chartData['wh_rec_per'][all_whs[w]][shp_tday[ss]]['percentage'] = so1_per_total;
+                        t_hd = t_hd + '<td class="Percentage" >' + total_d + ' <span class="'+text_light+'"> ('+so1_per_total+'%)<span></td></tr></a><tr class="">'
+                    }
+                   
+                    
+                    t_hd = t_hd + '</tr><tr><td class="Total" >Total</td>'
+                    for (let s = 0; s < ahrs.length; s++) {
+                        if (all_whs_total[all_whs[w]][ahrs[s]] == undefined) {
+                            so1 = 0
+                        } else {
+                            so1 = all_whs_total[all_whs[w]][ahrs[s]]
+                        }
+                        t_hd = t_hd + '<td class="Total">' + so1 + '</td>'
+                    }
+                    t_hd = t_hd + '<td class="Total text-center">' + total_e_d + '</td>'
+                    t_hd = t_hd + '</tr></tbody></table><div style="clear:both;height:100px;"></div>'
+                }
+                t_hd = t_hd + '</div>';
+                document.getElementById("t_data").innerHTML = t_hd;    
+
+                today = response['today']
+                onehr = response['onehr']
+                var d = ''
+                var labels = []
+                var lo = {}
+                data_set = []
+                bclr_ar = []
+                bclrbr_ar = []
+                for (let i = 0; i < today.length; i++) {
+
+                    labels.push(today[i]['station'])
+
+                    data_set.push(today[i]['count'])
+                    bclrbr_ar.push(bclr[randomIntFromInterval(0, 10)])
+                    bclr_ar.push(bclrbr[randomIntFromInterval(0, 10)])
+                    d = d + '<div class="col-16 col-md-2 order-2 order-md-1"> ' +
+                        '<div class="bg-light text-center p-2 text-dark">' + today[i]['station'] + '</br><span class="' + fnt[randomIntFromInterval(0, 5)] + ' fn-inner">' + today[i]['count'] + '<span></div>' +
+                        '</div>'
+                }
+                document.getElementById("counts").innerHTML = d;
+                initializeLineChart();
+                $('a').on('click', function (e) {
+                    e.preventDefault();
+                    console.log("clicked");
+                    line = this.textContent;               
+                    whObjectKeys = (Object.keys(chartData.grid_object));                   
+                    wh = whObjectKeys[0];  
+                    lineObject = chartData.grid_object[wh][line];                   
+                    timeSheetGrid(wh, line, lineObject);                   
+                });
+            },
+            error: function () { 
+                // alert("No Record Found")
+             }
+        });
+
+    };
+
+    function timeSheetGrid(wh, line, lineObject){
+        let accoridan = '<div class="accordion" id="accordionExample">';
+        var z = 0;
+        var accoridanBody = new Array;
+        accoridanBody.push(accoridan);
+        z++;
+        var tbl = '<table Class="table table-hover table-bordered table-striped">';
+        var tablC ="</table>";
+        var th = '<tr><th class="bg-primary text - light">Pallet ID</th><th class="bg-primary text - light">Build ID</th><th class="bg-primary text - light">Item ID</th class="bg-primary text - light"><th class="bg-primary text - light">Minutes</th><th class="bg-primary text - light">Scanned</th></tr>';
+         var tr ='';
+        $.each(lineObject, function (key, value) {
+            $.each(value, function (key1, value1) {
+                 tr += "<tr><td>" + value[key1]['palletid'] + "</td><td>" + value[key1]['buildid'] + "</td><td>" + value[key1]['itemid'] + "</td><td>" + value[key1]['min'] + "</td><td>" + value[key1]['scanned'] + "</td></tr>";        
+            });
+            if (key <= 12) {
+                key = key + ' AM'
+            } else {
+                key = key - 12
+                key = key + ' PM'
+            }
+            accoridanBody.push('<div style="height:10px;"></div><div class="accordion-item"><h2 class="accordion-header" id="headingOne"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse_'+z+'" aria-expanded="true" aria-controls="collapse_'+z+'"><b>Time @'+key+'</b></button></h2><div id="collapse_'+z+'" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample"><div class="accordion-body"><strong>'+tbl+th+tr+tablC+'</div></div></div>');
+            tr ='';
+            z++;
+            
+        });
+        let text = accoridanBody.toString();
+        let newString = text.replace(/,/g, "");
+        document.getElementById("timesheet-data").innerHTML = newString + '</div>';
+    }
+
+    window.setTimeout(function() {
+        window.location.reload();
+    }, 1000000);
+
+    getShippingCount(1);
+    
+    $('#whs').val($('#wh').val());
+}.call(this));
+</script>
+
+<script>
+    function updateTeamChart() {
+        if(chartData.hasOwnProperty('wh_rec')) {
+            totalUnitScanned = 0;
+            var warehouse = Object.keys(chartData['wh_rec']);
+            warehouse.forEach(w => {
+                lines = Object.keys(chartData['wh_rec'][w]);
+                lines.forEach(l => {
+                    hours = Object.keys(chartData['wh_rec'][w][l]);
+                    hours.forEach(h => {
+                        totalUnitScanned = totalUnitScanned + chartData['wh_rec'][w][l][h];
+                    })
+                });
+            });
+        }  
+        teamChart.data.datasets.forEach((dataset) => {
+            dataset.data = [];
+        });       
+        teamChart.data.datasets.forEach((dataset) => {
+            barcolor = calculuatePercentage([totalUnitScanned, chartData['total_target']]);
+            dataset.data = [totalUnitScanned, chartData['total_target']];
+            dataset.backgroundColor[0] = barcolor;
+        });
+
+        teamChart.update();
+    }
+
+    function updateLineChart() {
+        if(chartData.hasOwnProperty('wh_rec')) {   
+                totalUnitScanned = 0;
+                var warehouse = Object.keys(chartData['wh_rec']);
+                var linechartsDiv = document.getElementById("linecharts");
+                var s = 1;
+                warehouse.forEach(w => {
+                    lines = Object.keys(chartData['wh_rec'][w]);
+                    console.log(lines);
+                    lines.forEach(l => {
+                        console.log(s);
+                        linechartsDiv = document.getElementById("inner-"+s);
+                        hours = Object.keys(chartData['wh_rec'][w][l]);
+                        chartData['wh_rec'][w][l]['total'] = 0;
+                        hours.forEach(h => {
+                            chartData['wh_rec'][w][l]['total'] = chartData['wh_rec'][w][l]['total'] + chartData['wh_rec'][w][l][h];
+                        });
+                        chartData['wh_rec'][w][l]['target'] = (chartData['wh_rec'][w][l]['total'] / chartData['wh_rec_per'][w][l]['percentage'] * 100);
+                        // create barchart
+                        datasets = [chartData['wh_rec'][w][l]['total'],chartData['wh_rec'][w][l]['target']];
+                        if(document.getElementById('linechart-'+l) == null) {
+                            canvas = document.createElement('canvas');
+                            canvas.id = 'linechart-'+l;
+                            linechartsDiv.append(canvas);
+                            var chrt = document.getElementById(canvas.id).getContext("2d");   
+                            labelName = 'Scanned Units for Line ' + l;
+                            config = initializeBarChart(['Team Scanned Unit', 'Target Unit'], datasets, labelName);
+                            lineChart[l] = new Chart(chrt, config);
+                        } else {                        
+                        var chrt = document.getElementById(canvas.id).getContext("2d");
+                        lineChart[l].data.datasets.forEach((dataset) => {
+                                    dataset.data = [];
+                        });
+                        lineChart[l].data.datasets.forEach((dataset) => {
+                            barcolor = calculuatePercentage(datasets);
+                            dataset.data = datasets;
+                            dataset.backgroundColor[0] = barcolor;
+                        }); 
+                        lineChart[l].update(); 
+                    }
+                    });
+                    s = s + 1
+                });
+            }
+
+    }
+
+    function calculuatePercentage(datasets) {
+        var percentage = (datasets[0]/datasets[1])*100;
+           if(percentage >= 100) {
+            barcolor = 'green';
+           } else if(percentage >=90 && percentage < 100) {
+            barcolor = 'yellow';
+           } else {
+            barcolor = 'red';
+           }
+        return barcolor;
+    }
+
+    function initializeBarChart(labels,datasets,labelName) {
+           barcolor = calculuatePercentage(datasets);
+           var data = {
+            labels: labels,
+            datasets: [{
+                label: labelName,
+                data: datasets,
+                backgroundColor: [
+                barcolor,
+                'rgba(105,105,105, 1)' // rgb(28,200,138)
+                ],
+                /* borderColor: [
+                'rgb(255, 99, 132)',
+                'rgb(255, 159, 64)'
+                ],	*/
+                borderWidth: 1,
+                barPercentage: 0.2
+            }]
+            };
+            return {
+            type: 'bar',
+            data: data,
+            options: {
+                scales: {
+                y: {
+                    beginAtZero: true
+                },
+                x: {
+                grid: { lineWidth: 0 }
+                }
+                }
+            },
+            };
+    }
+
+    
+    function initializeLineChart() {  
+        lineData = [];
+        if(lineChart) {
+            updateLineChart();            
+        } else { 
+            if(chartData.hasOwnProperty('wh_rec')) {
+                totalUnitScanned = 0;
+                var warehouse = Object.keys(chartData['wh_rec']);
+                var linechartsDiv = document.getElementById("linecharts");
+                var s = 1;
+                warehouse.forEach(w => {
+                    lines = Object.keys(chartData['wh_rec'][w]);
+                    
+                    lines.forEach(l => {
+                        console.log(s)
+                        console.log(11111)
+                        linechartsDiv = document.getElementById("inner-"+s);
+                        hours = Object.keys(chartData['wh_rec'][w][l]);
+                        chartData['wh_rec'][w][l]['total'] = 0;
+                        hours.forEach(h => {
+                            chartData['wh_rec'][w][l]['total'] = chartData['wh_rec'][w][l]['total'] + chartData['wh_rec'][w][l][h];
+                        })
+                        chartData['wh_rec'][w][l]['target'] = (chartData['wh_rec'][w][l]['total'] / chartData['wh_rec_per'][w][l]['percentage'] * 100);
+                    // create barchart
+                    datasets = [chartData['wh_rec'][w][l]['total'],chartData['wh_rec'][w][l]['target']];
+                    canvas = document.createElement('canvas');
+                    canvas.id = 'linechart-'+l;
+                    linechartsDiv.append(canvas);
+                    labelName = 'Scanned Units for Line '+l;
+                    var chrt = document.getElementById(canvas.id).getContext("2d");                
+                    config = initializeBarChart(['Team Scanned Unit', 'Target Unit'],datasets, labelName);                   
+                    lineData[l] = new Chart(chrt, config);
+                    s = s + 1  
+                    
+                    });
+                  lineChart = lineData;
+                    
+                });
+            } 
+        }
+    }
+
+   function initializeTeamChart() {
+    if(teamChart) {
+        updateTeamChart();
+    } else {
+        totalUnitScanned = 0;
+        if(chartData.hasOwnProperty('wh_rec')) {
+            var warehouse = Object.keys(chartData['wh_rec']);
+            warehouse.forEach(w => {
+                lines = Object.keys(chartData['wh_rec'][w]);
+                lines.forEach(l => {
+                    hours = Object.keys(chartData['wh_rec'][w][l]);
+                    hours.forEach(h => {
+                        totalUnitScanned = totalUnitScanned + chartData['wh_rec'][w][l][h];
+                    })
+                });
+            });
+        }  
+        var labels = ['Current Units','Target Units'];
+        var percentage = (totalUnitScanned / chartData['total_target']) * 100;
+        if(percentage >= 100) {
+            barcolor = 'green';
+        } else if(percentage < 100 && percentage >= 90) {
+            barcolor = 'yellow';
+        } else {
+            barcolor = 'red';
+        }
+        var data = {
+        labels: labels,
+        datasets: [{
+            label: 'Team Scanned Units',
+            data: [totalUnitScanned,chartData['total_target']],
+            backgroundColor: [
+            barcolor,
+            'rgba(105,105,105, 1)' // rgb(28,200,138)
+            ],
+            /* borderColor: [
+            'rgb(255, 99, 132)',
+            'rgb(255, 159, 64)'
+            ],	*/
+            borderWidth: 1,
+            barPercentage: 0.2
+        }]
+        };
+        var config = {
+        type: 'bar',
+        data: data,
+        options: {
+            responsive: true,
+            scales: {
+            y: {
+                beginAtZero: true
+            },
+            x: {
+               grid: { lineWidth: 0 }
+            }
+            }
+        },
+        };
+        var chrt = document.getElementById("chartId").getContext("2d");
+        Chart.defaults.font.size = 22;
+        teamChart = new Chart(chrt, config);        
+    }
+}
+initializeTeamChart();
+</script>
+  

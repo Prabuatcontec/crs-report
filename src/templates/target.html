@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    
+    <script src="https://cdn.syncfusion.com/ej2/dist/ej2.min.js"></script>
+    <title>Contec Assembly</title>
+</head>
+<style>
+  body {
+    
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    background-color: #f1f1f1;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .hideme {
+    display: none;
+  }
+  
+  .showme {
+    display: block;
+  }
+  .container {
+    display: flex;
+    font-family: arial;
+    font-size: 24px;
+    margin: 15px;
+    width: 11%;
+    height:  10%;
+    /*outline: dashed 1px black;
+     Setup */
+    position: relative;
+    float:left;
+  }
+  
+  .child {
+    width: 50%;
+    height: 50%; 
+    /* Center vertically and horizontally */
+    position: absolute;
+    top: 50%;
+    left: 20%;
+    margin: -25px 0 0 -25px; /* Apply negative top and left margins to truly center the element */
+  }
+  .counts {
+    width : 100%;
+    
+  }
+  .white {
+
+  }
+  .counts1 {
+    width : 100%;
+    
+  }
+  .fn-inner {
+    font-size: 70px;
+  }
+
+  
+  .table-hover > tbody > tr.danger:hover > td {
+    background-color: red !important;
+    }
+    .table-hover > tbody > tr.warning:hover > td {
+    background-color: yellow !important;
+    }
+    .table-hover > tbody > tr.success:hover > td {
+    background-color: blue !important;
+    }
+  
+    .table-hover 
+    {
+      font-weight: bold;
+      font-size: 30px;
+    }
+  
+    .Total {
+      font-size: 50px;
+      color: #0d6efd !important;
+    }
+    .bg-warning {
+      font-size: 50px;
+    }
+
+</style>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.syncfusion.com/ej2/material.css" rel="stylesheet">
+<body>  
+    <div class="h4">Assembly Station</div>
+    <div class="container-fluid">
+      <div class="row">
+     <div class="col-sm p-2">
+    <select id="whs" class="form-control" onchange="">
+        <option value="charlotte">Charlotte</option>
+        <option value="bloomington">Bloomington</option>
+        <option value="brownsville">Brownsville</option>
+        <option value="sanjose">Sanjose</option>
+    </select>
+  </div>
+  <div class="col-sm p-2">
+    <select id="stations" class="form-control" onchange="changeMe()">
+      <option value=0>Select Station</option>
+      {% for segment in stations %}
+      <option value="{{segment['id']}}">{{ segment['name'] }} - {{ segment['hr'] }} Hrs</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-sm p-2">
+    <input id="target" class="target form-control" type="number" value="0" >
+  </div>
+  <div class="col-sm p-2">
+    <input id="update" class="update btn btn-primary" type="button" value="Update" onclick="updateTarget()" >
+  </div>
+</div>
+</div>
+    <div class="table-responsive" style="height: 800px;overflow-y: auto;">
+ <table class="table table-bordered table-striped fw-bold text-lg" >
+  <tr class="bg-primary"><th>Hr</th><th>Station</th><th>Target</th></tr>
+  {% for segment in stations %}
+  <tr onclick="getTarget({{segment['id']}},{{segment['target']}}),{{segment['wh']}}" class="text-primary station-{{segment['id']}} close-station"><td>{{segment['hr']}}</td><td>{{segment['name']}}</td><td id="{{segment['id']}}">{{segment['target']}}</td></tr>
+  {% endfor %}
+ </table>
+</div>
+
+    <div class="table-responsive" id="t_data">
+       
+    </div>
+    <div class="container">
+      <div class="row g-2 counts" id="counts" >
+         
+      </div>
+    </div>
+    
+    <input type="hidden" value="{{wh}}" id="wh" class="wh" />
+    <input type="hidden" value="{{wh}}" id="new_wh" class="new_wh" />
+     
+</body>
+</html>
+
+<script> 
+  $(function() {
+    $('#whs').bind('change', function () { // bind change event to select
+        var url = $(this).val(); // get selected value
+        if (url != '') { // require a URL
+            window.location = url; // redirect
+        }
+        return false;
+    });
+
+    changeMe = function() {
+      var station = $('#stations').val();
+      $('.close-station').removeClass('showme');
+      $('.close-station').removeClass('hideme');
+      $('.close-station').addClass('hideme');
+      $('.station-'+station).removeClass('hideme'); 
+    };
+
+    getTarget = function(id,count, wh) {
+      $('#stations').val(id);
+      $('#target').val(count);
+      $('#new_wh').val(wh);
+
+      
+    };
+
+    
+
+    updateTarget = function() {
+        var id = $('#stations').val()
+        var count = $('#target').val()
+        var wh = $('#new_wh').val()
+        if(id>0  && count > 0) {
+          if(wh == 'charlotte') {
+            count = count - 3;
+          }
+          if(wh == 'bloomington' || wh == 'brownsville') {
+            count = count - 2;
+          }
+        var mydata = {
+          "id": id,
+          "count": count
+      }
+        $.ajax({
+          type: "POST",
+          url: "updatetarget",
+          data: mydata,
+          contentType: "application/x-www-form-urlencoded",
+          dataType: "json",
+          success: function(response) {
+            $('#'+id).html(count);
+          },
+        });
+      };
+    }
+     
+    $('#whs').val($('#wh').val());
+}.call(this));
+</script>

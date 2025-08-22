@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.syncfusion.com/ej2/dist/ej2.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="{{url_for('static', filename='js/custom.js')}}"></script>
+    <link href="https://cdn.syncfusion.com/ej2/material.css" rel="stylesheet">
+    <title>Target Time Sheet</title>
+    <style>
+        .e-input-group input.e-input,
+        .e-float-input.e-input-group input,
+        .e-input-group.e-control-wrapper input.e-input,
+        .e-float-input.e-input-group.e-control-wrapper input,
+        .e-float-input input,
+        .e-float-input.e-control-wrapper input {
+            min-height: 30px !important;
+        }
+
+        .headerColor {
+            background-color: rgb(207, 226, 255) !important;
+            color: black !important;
+        }
+
+        .navbar {
+            border-bottom: gray !important;
+        }
+
+        .bg-danger {
+            background-color: rgb(234, 84, 85) !important;
+        }
+
+        .bg-equal {
+            background-color: rgb(217, 155, 9) !important;
+        }
+
+        @keyframes blink {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar  navbar-light">
+        <a class="navbar-brand" href="#"><img src="{{url_for('static', filename='logo3.png')}}" align="middle"
+                style="height: 8vh;"></a>
+    </nav>
+    <div style="border-top: 2px;width: 100%;border-style:solid; margin-bottom: 10px;border-color: rgb(169, 166, 166);">
+    </div>
+    <div class="container">
+        {% block body %}
+        <div class="row">
+            <input type="hidden" value="{{wh}}" id="wh" class="wh" />
+            <div class="col-md-3">
+                <input id="datepicker" class="form-select" type="text" onblur="loadCharts();">
+            </div>
+
+            <!-- <div class="col-md-3">
+                <button type="button" class="btn btn-primary" data-target="#content-block">Show Build</button>
+            </div> -->
+        </div>
+        <div class="row pb-20"></div>
+        <div class="row">
+            <div id="content-block">
+                <div Id="inner-table"></div>
+            </div>
+        </div>
+        <script>
+            var datepicker = new ej.calendars.DatePicker({ width: "100%", value: new Date(), format: 'yyyy-MM-dd' });
+            datepicker.appendTo('#datepicker');
+        </script>
+        <div class="row">
+            <div class="row g-2 counts" id="counts">
+                <!-- <p>New Doc</p> -->
+                <div class="card" style="padding: 0%;">
+                    <div class="card-body" style="padding: 0%;">
+                        <div class="row">
+                            <div class="row">
+                                <div class="col-12 col-sm-12 col-md-12">
+                                    <h3 class="text-center">Contec BOL Receiving : <span Id="warehouse"></span></h3>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 col-sm-6 col-md-6">
+                                    <h3 class="text-left" Id="currentDate" style="padding-left: 15px;"></h3>
+                                </div>
+                                <div class="col-6 col-sm-6 col-md-6">
+                                    <h3 class="text-end" Id="currentTime"></h3>
+                                </div>
+                            </div>
+                            <div class="col-6 col-sm-6  col-md-6">
+                                <div class="table-responsive" id="t_data" style="padding: 15px;"></div>
+                            </div>
+                            <div class="col-6 col-sm-6  col-md-6">
+                                <barchart_1></barchart_1>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6 col-sm-6  col-md-6">
+                                <div id="userTable" style="padding: 15px;"></div>
+                            </div>
+                            <div class="col-6 col-sm-6  col-md-6">
+                                <line_chart></line_chart>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    {% endblock %}
+    <!-- <input type="hidden" value="{{wh}}" id="wh" class="wh" /> -->
+</body>
+
+</html>
+<script>
+    $(document).ready(function () {
+        $('#content-block').hide();
+        gettimezone();
+        // loadData(); 
+        // loadUserData();
+        /*setInterval(function () {
+            // loadData(); 
+        }, 10000);*/
+    });
+
+
+
+    function loadCharts() {
+        loadData();
+        loadUserData();
+    }
+
+
+    function getShipLines() {
+        var shipLineObject = {}
+        warehouse = $("#wh").val()
+        shipdate = $("#datepicker").val()
+        $('#lines').find('option').remove().end()
+        $.ajax({
+            type: "GET",
+            url: "getShipLines/" + warehouse + "/" + shipdate,
+            contentType: "application/json",
+            dataType: "json",
+            success: function (response) {
+                $.each(response, function (key, value) {
+                    if (value == 'Z210') {
+                        valueLabel = 'Line 3';
+                        $('#lines').append($("<option></option>").attr("value", value).text(valueLabel));
+                    }
+                    else if (value == 'Z524') {
+                        valueLabel = 'Line 2';
+                        $('#lines').append($("<option></option>").attr("value", value).text(valueLabel));
+                    }
+                    else if (value == 'Z523') {
+                        valueLabel = 'Line 4';
+                        $('#lines').append($("<option></option>").attr("value", value).text(valueLabel));
+                    }
+                    else {
+                        $('#lines').append($("<option></option>").attr("value", value).text(value));
+                    }
+                });
+            },
+        });
+    }
+
+    $(document).on('click', 'button', e => {
+        $($(e.target).data('target')).toggle();
+        txt = $('button').text();
+        if (txt == 'Show Build') {
+            $('button').text("Hide Build");
+        }
+        else {
+            $('button').text("Show Build");
+        }
+    });
+
+    function loadData() {
+        const targetForHr = 250;
+        var requestObject = {}
+        requestObject['warehouse'] = $("#wh").val()
+        requestObject['date'] = $("#datepicker").val()
+        document.getElementById("warehouse").innerHTML = $("#wh").val();
+        $.ajax({
+            type: "POST",
+            url: "bl-receiving",
+            data: requestObject,
+            contentType: "application/x-www-form-urlencoded",
+            dataType: "json",
+            success: function (response) {
+                console.log(response)
+                var targetData = response['result'];
+                lastEndTime = '';
+                var t_hd = ''
+                t_hd = t_hd + '<table class="table table-hover table-striped" border=1 >'
+                t_hd = t_hd + '<thead><th class="text-left text-warning headerColor"> Time slot</th><th class="text-left text-warning headerColor"> Target</th><th class="text-left text-warning headerColor">Actual</th><th class="text-left text-warning headerColor">Variance</th><th class="text-left text-warning headerColor">Incr Target(hr)</th><th class="text-left text-warning headerColor">Incr Complete(hr)</th></thead><tbody>'
+                t_close = '</tbody></table>';
+                lastTenUnitsScanned = [];
+                firstAverageCalculated = false;
+                totalUnitsScanned = 0;
+                avgTotalBuildperUnit = 0;
+                allAvgCalculator = [];
+                target = 0;
+                var last_target = "";
+                var last_avg = "";
+                var last_avg_color = "";
+                var last_record = "";
+                for_arr = [];
+                for_arr_b = [];
+                for_arr_c = [];
+                for_arr_d = [];
+                var t_row = ''
+                let data = [];
+                let overall_data = [];
+                hrlyTarget = 0;
+                hrlyTargetComplete = 0;
+
+                for (i = 0; i < targetData.length; i++) {
+                    data.push({ 'time': targetData[i]['hr'], 'target': '250', 'actual': targetData[i]['cnt'] })
+      
+                    differenceData = (targetData[i]['cnt'] - targetForHr);
+                    cl_name = ' '
+                    if (targetData[i]['cnt'] >= targetForHr) {
+                        cl_name = ' bg-success'
+                    }
+                    else {
+                        cl_name = ' bg-danger'
+                    }
+                    hrlyTarget += targetForHr;
+                    hrlyTargetComplete += targetData[i]['cnt'];
+                    style = ""
+                    t_row += '<tr class="rows  ' + cl_name + '"><td><span>' + targetData[i]['hr'] + '</span></td><td><span>' + targetForHr + '</span></td><td><span>' + targetData[i]['cnt'] + '</span></td><td><span>' + differenceData + '</span><td><span>' + hrlyTarget + '</span></td><td><span>' + hrlyTargetComplete + '</span></td></tr>'
+                }
+                console.log(data);
+                overall_data.push({ 'time': 'Total', 'target': hrlyTarget, 'actual': hrlyTargetComplete });
+                
+                console.log(overall_data);
+                document.getElementById("t_data").innerHTML = t_hd + t_row + t_close
+
+                for (i = 0; i < for_arr.length; i++) {
+                    document.getElementById("a-" + for_arr[i]).innerHTML = '<span class="badge bg-success">00/00</span>';
+                    document.getElementById("b-" + for_arr[i]).innerHTML = for_arr_b[i];
+                    document.getElementById("c-" + for_arr[i]).innerHTML = for_arr_c[i];
+                    document.getElementById("d-" + for_arr[i]).innerHTML = for_arr_c[i];
+                }
+
+    
+                const margin = { top: 40, right: 20, bottom: 50, left: 50 },
+                    width = 600 - margin.left - margin.right,
+                    height = 400 - margin.top - margin.bottom;
+
+                const x0 = d3.scaleBand().domain(data.map(d => d.time).concat("Total")).range([0, width]).padding(0.2);
+                const x1 = d3.scaleBand().domain(["Target", "Actual"]).range([0, x0.bandwidth()]).padding(0.05);
+                const y = d3.scaleLinear().domain([0, 3000]).range([height, 0]);
+
+                let svg = d3.select("barchart_1").html("");  
+
+                svg = d3.select("barchart_1")
+                    .append("svg")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+   
+                svg.append("g")
+                    .attr("class", "grid")
+                    .call(d3.axisLeft(y).tickSize(-width).tickFormat(""))
+                    .selectAll("line")
+                    .attr("stroke", "#ddd")
+                    .attr("stroke-dasharray", "3,3");
+
+           
+                svg.append("g")
+                    .attr("transform", `translate(0,${height})`)
+                    .call(d3.axisBottom(x0));
+
+   
+                svg.append("g")
+                    .call(d3.axisLeft(y));
+
+           
+                const color = d3.scaleOrdinal().domain(["Target", "Actual"]).range(["#4682B4", "#87CEEB"]);
+
+      
+                data.forEach(d => {
+                    svg.selectAll(`.bar-${d.time}`)
+                        .data(["Target", "Actual"]) 
+                        .enter()
+                        .append("rect")
+                        .attr("x", key => x0(d.time) + x1(key)) 
+                        .attr("y", key => y(d[key.toLowerCase()])) 
+                        .attr("width", x1.bandwidth()) 
+                        .attr("height", key => height - y(d[key.toLowerCase()])) 
+                        .attr("fill", key => color(key)); 
+
+                    svg.selectAll(`.bar-${d.time}`)
+                        .data(["Target", "Actual"])
+                        .enter()
+                        .append("text")
+                        .attr("x", key => x0(d.time) + x1(key) + x1.bandwidth() / 2) 
+                        .attr("y", key => y(d[key.toLowerCase()]) - 5) 
+                        .attr("text-anchor", "middle") 
+                        .attr("fill", "black") 
+                        .text(key => d[key.toLowerCase()]); 
+                });
+
+           
+                overall_data.forEach(d => {
+                    svg.selectAll(`.bar-${d.time}`)
+                        .data(["Target", "Actual"]) 
+                        .enter()
+                        .append("rect")
+                        .attr("x", key => x0(d.time) + x1(key)) 
+                        .attr("y", key => y(d[key.toLowerCase()])) 
+                        .attr("width", x1.bandwidth()) 
+                        .attr("height", key => height - y(d[key.toLowerCase()])) 
+                        .attr("fill", key => color(key)); 
+
+                    svg.selectAll(`.bar-${d.time}`)
+                        .data(["Target", "Actual"])
+                        .enter()
+                        .append("text")
+                        .attr("x", key => x0(d.time) + x1(key) + x1.bandwidth() / 2) 
+                        .attr("y", key => y(d[key.toLowerCase()]) - 5) 
+                        .attr("text-anchor", "middle") 
+                        .attr("fill", "black") 
+                        .text(key => d[key.toLowerCase()]); 
+                });
+
+                const legend = svg.append("g").attr("transform", `translate(${width - 100}, 0)`);
+                ["Target", "Actual"].forEach((key, i) => {
+                    legend.append("rect")
+                        .attr("x", 0)
+                        .attr("y", i * 20)
+                        .attr("width", 15)
+                        .attr("height", 15)
+                        .attr("fill", color(key));
+                    legend.append("text")
+                        .attr("x", 20)
+                        .attr("y", i * 20 + 12)
+                        .text(key);
+                });
+
+
+            },
+        });
+    }
+
+    function loadUserData() {
+        const targetForHr = 250;
+        var requestObject = {};
+        var targetDataUser = null;
+        requestObject["warehouse"] = $("#wh").val();
+        requestObject["date"] = $("#datepicker").val();
+        document.getElementById("userTable").innerHTML = "";
+        document.getElementsByTagName("line_chart").innerHTML = "";
+        let svg = d3.select("line_chart").html("");
+
+
+        const today = new Date();
+        const formattedDate = today.toISOString().split('T')[0]; // "2025-03-13"
+        console.log(formattedDate);
+        document.getElementById("currentDate").innerHTML = 'Date :' + formattedDate;
+
+        const hours = String(today.getHours()).padStart(2, '0');
+        const minutes = String(today.getMinutes()).padStart(2, '0');
+        const seconds = String(today.getSeconds()).padStart(2, '0');
+        const formattedTime = `${hours}:${minutes}:${seconds}`;
+        document.getElementById("currentTime").innerHTML = 'Time :' + formattedTime;
+
+
+        $.ajax({
+            type: "POST",
+            url: "bl-receiving-user",
+            data: requestObject,
+            contentType: "application/x-www-form-urlencoded",
+            dataType: "json",
+            success: function (response) {
+                console.log(response);
+                data = response.result;
+                const userKeys = Object.keys(data[0]).filter(key => !["AddDate", "Hr", "Warehouse"].includes(key));
+                const formattedData = data.map(record => {
+                    let mappedRecord = { time: `${record.Hr}` };
+                    userKeys.forEach(user => {
+                        mappedRecord[user] = record[user] || 0;
+                    });
+                    return mappedRecord;
+                });
+                createTable(formattedData, userKeys, targetForHr);
+                createChart(formattedData, userKeys);
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+
+        function createTable(data, userKeys, targetForHr) {
+            var t_hd = '<table class="table table-hover table-striped" border="1">';
+            t_hd += '<thead><tr><th class="text-left text-warning headerColor">Time Slot</th>';
+            userKeys.forEach(function (username) {
+                t_hd += '<th class="text-left text-warning headerColor">' + username + '</th>';
+            });
+            t_hd += '</tr></thead><tbody>';
+            var t_row = '';
+            data.forEach(function (dataset) {
+                t_row += '<tr class="rows"><td><span>' + dataset.time + '</span></td>';
+                userKeys.forEach(function (username) {
+                    difference = (dataset[username] - targetForHr);
+                    t_row += '<td>' + targetForHr + '/' + (dataset[username] || 0) + '=' + difference + '</td>';
+                });
+                t_row += '</tr>';
+            });
+            var t_close = '</tbody></table>';
+            document.getElementById("userTable").innerHTML = t_hd + t_row + t_close;
+        }
+
+
+        function createChart(data, userKeys) {
+            const margin = { top: 50, right: 50, bottom: 50, left: 50 },
+                width = 650 - margin.left - margin.right,
+                height = 400 - margin.top - margin.bottom;
+            let svg = d3.select("line_chart").html("");
+
+            svg = d3.select("line_chart")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scalePoint()
+                .domain(data.map(d => d.time))
+                .range([0, width]);
+
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(data, d => Math.max(...userKeys.map(user => d[user])))])
+                .range([height, 0]);
+
+            const line = d3.line()
+                .x(d => x(d.time))
+                .y(d => y(d.value));
+
+
+            const colors = d3.scaleOrdinal().domain(userKeys)
+                .range(d3.schemeCategory10);
+
+            userKeys.forEach(user => {
+                const lineData = data.map(d => ({ time: d.time, value: d[user] }));
+
+                svg.append("path")
+                    .datum(lineData)
+                    .attr("fill", "none")
+                    .attr("stroke", colors(user))
+                    .attr("stroke-width", 2)
+                    .attr("d", line);
+
+
+                svg.selectAll(`.dot-${user}`)
+                    .data(lineData)
+                    .enter().append("circle")
+                    .attr("class", `dot-${user}`)
+                    .attr("cx", d => x(d.time))
+                    .attr("cy", d => y(d.value))
+                    .attr("r", 4)
+                    .attr("fill", colors(user));
+
+
+                svg.selectAll(`.label-${user}`)
+                    .data(lineData)
+                    .enter().append("text")
+                    .attr("x", d => x(d.time))
+                    .attr("y", d => y(d.value) - 10)
+                    .attr("text-anchor", "middle")
+                    .attr("font-size", "12px")
+                    .attr("fill", colors(user))
+                    .text(d => d.value);
+            });
+
+
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x));
+
+            svg.append("g")
+                .call(d3.axisLeft(y));
+
+            const legend = svg.append("g")
+                .attr("transform", `translate(${width - 100}, 0)`);
+
+            userKeys.forEach((user, i) => {
+                legend.append("rect")
+                    .attr("x", 0)
+                    .attr("y", i * 20)
+                    .attr("width", 10)
+                    .attr("height", 10)
+                    .attr("fill", colors(user));
+
+                legend.append("text")
+                    .attr("x", 15)
+                    .attr("y", i * 20 + 10)
+                    .attr("text-anchor", "start")
+                    .attr("font-size", "12px")
+                    .text(user);
+            });
+        }
+
+    }
+
+    function itemAvgCalcultor(targetData) {
+        itemList = {};
+        LBreaktime = 0;
+        targetData.forEach(function (r, i) {
+            if (r[1] in itemList) {
+                itemList[r[1]]['unitCount'] = itemList[r[1]]['unitCount'] + 1;
+                if (r['lastEndTime'] != undefined) {
+                    itemList[r[1]]['endtime'] = r['lastEndTime'];
+                    itemList[r[1]]['cumulativeTime'] += avgCalc(r[3], r['lastEndTime']);
+                }
+                else {
+                    itemList[r[1]]['cumulativeTime'] += avgCalc(r[3], r[4]);
+                }
+                if (r[2] == 1) {
+                    itemList[r[1]]['breaktime'].push(LBreaktime);
+                }
+                if (r[6] >= 1500 && r[6] <= 2700) {
+                    LBreaktime = 0;
+                    //   itemList[r[1]]['breaktime'].push(r[6]);  
+                }
+                else {
+                    LBreaktime = r[6];
+                }
+            } else {
+                itemList[r[1]] = { 'itemId': r[1], 'unitCount': 1, 'pallets': [], 'startTime': r[3], 'endtime': r[4], 'target': r[5], 'breaktime': [LBreaktime], 'cumulativeTime': avgCalc(r[3], r[4]) }
+            }
+        });
+        console.log(itemList)
+        tablehead = "";
+        tablerow = "";
+        tablerowL = "";
+        tableclose = "";
+        tablehead = tablehead + '<table class="table table-hover table-striped" border=1 >'
+        tablehead = tablehead + '<thead><th class="text-left text-warning headerColor">ItemID</th><th class="text-left text-warning headerColor">Finished Units</th><th class="text-left text-warning headerColor">Start Time</th><th class="text-left text-warning headerColor">End Time</th><th class="text-left text-warning headerColor">Total Chang Over Time</th><th class="text-left text-warning headerColor">Total Time Taken</th><th class="text-left text-warning headerColor">Active Time</th><th class="text-left text-warning headerColor">Act Avg Time Per Unit</th><th class="text-left text-warning headerColor">Taken Avg Time Per Unit</th><th class="text-left text-warning headerColor">One Unit Sec</th></thead><tbody>'
+        tableclose = '</tbody></table>';
+
+
+        percentTimeTaken = 0;
+        totalBreakTime = 0;
+        overdueTime = 0;
+        for (const [key, value] of Object.entries(itemList)) {
+            breaktime = 0;
+            totalTimeTaken = 0;
+            timeBadge = ''; classs = '';
+            value.breaktime.forEach(function (r) {
+                breaktime += r
+            });
+            if (breaktime > 2700) {
+                timeBadge = "animation:blink 1s infinite;";
+                classs = "badge bg-danger"
+                overdueTime += breaktime
+            }
+            if (breaktime > 1500 && breaktime < 2700) {
+                // timeBadge = "animation:blink 1s infinite;";
+                classs = "badge bg-success"
+                overdueTime += breaktime
+            }
+
+            // timeTaken  = avgCalc(value.startTime, value.endtime)
+            timeTaken = value.cumulativeTime;
+            percentTimeTaken += timeTaken;
+            totalTimeTaken = timeTaken + breaktime;
+            totalBreakTime += breaktime;
+            console.log(overdueTime);
+            tablerow += '<tr class="rows  "><td>' + value.itemId + '</td><td>' + value.unitCount + '</td><td>' + value.startTime + '</td><td>' + value.endtime + '</td><td><span class="' + classs + '"style="' + timeBadge + '">' + formatSeconds(breaktime) + '</span></td><td>' + formatSeconds(totalTimeTaken) + '</td><td>' + formatSeconds(timeTaken) + '</td><td>' + formatSeconds((Math.abs(timeTaken / value.unitCount))) + '</td><td>' + formatSeconds(Math.abs(totalTimeTaken) / value.unitCount) + '</td><td>' + Math.round((60 / value.target) * 60) + '</td></tr>'
+        }
+
+        console.log(percentTimeTaken);
+        tablerowL += '<tr class="rows" style="font-size:15pt;font-weight: 700;background-color: navajowhite;"><td></td><td></td><td></td><td class="text-danger">Change Over:</td><td class="text-danger">' + formatSeconds(totalBreakTime) + '</td><td class="text-danger">Total : </td><td class="text-danger">' + formatSeconds(percentTimeTaken) + '</td><td class="text-danger">Avg-Per/Day: </td><td class="text-danger">' + Math.round((percentTimeTaken / (28800 - overdueTime)) * 100) + '%</td><td></td></tr>';
+
+        document.getElementById("inner-table").innerHTML = tablehead + tablerowL + tablerow + tableclose;
+    }
+
+    function unitperCalc(targetData) {
+        for (k = 0; k < targetData.length; k++) {
+            unitperHr = (targetData[k][5] / 60)
+            unitpersec = (60 / unitperHr)
+            int10 = (unitpersec * 10);
+            targetData[k].push(unitpersec)
+            targetData[k].push(int10)
+            targetData[k].push(formatSeconds(unitpersec))
+            targetData[k].push(formatSeconds(int10))
+        }
+
+    }
+    RemaininAVg = 0
+    function getRemaings(targetData) {
+        remining = (targetData.length / 10).toString();
+        lastString = remining.split('.')
+        for (i = ((targetData.length) - (1)); i >= ((targetData.length) - (lastString[1])); i--) {
+            RemaininAVg += avgCalc(targetData[i][3], targetData[i][4])
+        }
+        for (j = ((targetData.length) - (1)); j >= ((targetData.length) - (lastString[1])); j--) {
+            targetData[j].push(RemaininAVg)
+            targetData[j].push(formatSeconds(RemaininAVg))
+        }
+    }
+
+    AvgtotalCal = 0;
+    function avgTimeTotalBuild(targetData) {
+        for (i = 0; i < targetData.length; i++) {
+            AvgtotalCal += avgCalc(targetData[i][3], targetData[i][4])
+        }
+        for (j = 0; j < targetData.length; j++) {
+            // targetData[j].push(AvgtotalCal)
+            targetData[j].push(formatSeconds(AvgtotalCal))
+            targetData[j].push(AvgtotalCal)
+        }
+    }
+
+    AvgtotalBuildCal = 0;
+    function avgTimeTotalBuild(targetData) {
+        for (i = 0; i < targetData.length; i++) {
+            AvgtotalBuildCal += avgCalc(targetData[i][3], targetData[i][4])
+        }
+        for (j = 0; j < targetData.length; j++) {
+            // targetData[j].push(AvgtotalCal)
+            targetData[j].push(formatSeconds(AvgtotalBuildCal))
+            targetData[j].push(AvgtotalBuildCal)
+        }
+    }
+
+    total10Cal = 0;
+    function AvgtimeCalc(targetData) {
+        for (i = 0; i < targetData.length; i++) {
+            total10Cal += avgCalc(targetData[i][3], targetData[i][4])
+            if ((i % 10) === 0) {
+                if (i != 0) {
+                    for (j = (i - 1); j >= (i - 10); j--) {
+                        targetData[j].push(total10Cal)
+                        targetData[j].push(formatSeconds(total10Cal))
+                    }
+                }
+                total10Cal = 0;
+            }
+        }
+    }
+
+    function avgCalc(start, end) {
+        var a = start.split(':');
+        var b = end.split(':');
+        var startseconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
+        var endseconds = (+b[0]) * 60 * 60 + (+b[1]) * 60 + (+b[2]);
+        diffSeconds = (endseconds - startseconds);
+        return diffSeconds
+    }
+
+
+    function diff(targetData) {
+        // var start = '02:04:33'; 
+        // var end = '03:07:35';  
+        for (m = 0; m < targetData.length; m++) {
+            var a = targetData[m][3].split(':');
+            var b = targetData[m][4].split(':');
+            var startseconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
+            var endseconds = (+b[0]) * 60 * 60 + (+b[1]) * 60 + (+b[2]);
+            diffSeconds = (endseconds - startseconds);
+            targetData[m].push(diffSeconds);
+            targetData[m].push(formatSeconds(diffSeconds));
+        }
+    }
+
+    function ZoneTimeAdjust(time) {
+
+        if (time != undefined) {
+            var a = time.split(':');
+            var incTime = 0;
+            if ($("#whs").val() == 'Charlotte') {
+                incTime = 3;
+            }
+            if ($("#whs").val() == 'Bloomington') {
+                incTime = 2;
+            }
+            hr = Number(a[0]) + Number(incTime);
+            mn = a[1];
+            sec = a[2];
+            modifiedTime = hr + ':' + mn + ':' + sec;
+            return modifiedTime;
+        }
+        else {
+            return time;
+        }
+    }
+
+    function calculateAverage(scannedUnits, n = 10) {
+
+        // Find sum of array element
+        var sum = 0;
+        for (var i = 0; i < n; i++) sum += scannedUnits[i];
+
+        return parseFloat(sum / n);
+    }
+
+    const formatSeconds = s => (new Date(s * 1000)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0];
+
+</script>

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.syncfusion.com/ej2/dist/ej2.min.js"></script>
+    <link href="https://cdn.syncfusion.com/ej2/material.css" rel="stylesheet">
+    <title>Target Time Sheet</title>
+    <style>
+        .e-input-group input.e-input, .e-float-input.e-input-group input, .e-input-group.e-control-wrapper input.e-input, .e-float-input.e-input-group.e-control-wrapper input, .e-float-input input, .e-float-input.e-control-wrapper input{
+            min-height:30px !important;
+        }
+        .headerColor{
+            background-color: rgb(207,226,255) !important;
+            color: black !important;
+        }
+        .navbar{
+            border-bottom: gray !important;
+        }
+        .bg-danger{
+            background-color: rgb(234,84,85) !important;
+        }
+
+        @keyframes blink {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+        
+    </style>
+</head>
+<body>  
+    <nav class="navbar  navbar-light" >
+        <a class="navbar-brand" href="#" ><img src="{{url_for('static', filename='logo1.png')}}" align="middle" style="height: 8vh;"></a>        
+    </nav>
+    <div style="border-top: 2px;width: 100%;border-style:solid; margin-bottom: 10px;border-color: rgb(169, 166, 166);"></div>
+    <div class="container">
+        {% block body %}    
+        <div class="row">
+            <div class="col-md-3">
+                <input id="datepicker" class="form-select" type="text" onblur="loadData();">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select " id="whs" onchange="getShipLines()">
+                    <option value="">-- Select Warehouse --- </option> 
+                    {% for resp in result %}
+                        <option value="{{resp[0]}}">{{resp[0]}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select id="lines" class="form-select " onblur="loadData();">
+                    <option value="">-- Select Line --- </option>           
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="button" class="btn btn-primary" data-target="#content-block">Show Build</button>
+            </div>
+        </div>
+        <div class="row pb-20"></div>
+        <div class="row">
+            <div id="content-block">
+              <div Id="inner-table"></div>
+            </div>
+        </div>
+    <script>
+        var datepicker = new ej.calendars.DatePicker({ width: "100%", value: new Date(), format: 'yyyy-MM-dd' });
+        datepicker.appendTo('#datepicker');
+    </script>
+    <div class="row">
+        <div class="row g-2 counts" id="counts">
+            <!-- <p>New Doc</p> -->
+            <div class="card" style="padding: 0%;">
+                <div class="card-body" style="padding: 0%;">
+                    <div class="table-responsive" id="t_data">
+                    </div>
+                </div>
+            </div>
+    </div>
+      
+    </div>
+    {% endblock %}
+    <!-- <input type="hidden" value="{{wh}}" id="wh" class="wh" /> -->
+</body>
+</html>
+<script>
+$(document).ready(function () { 
+    $('#content-block').hide(); 
+    setInterval(function () {
+        // Code to be executed after the delay
+        // This could include any jQuery operations
+        loadData(); 
+    }, 20000);
+});
+
+ 
+
+
+function getShipLines(){
+    var shipLineObject = {}
+    warehouse = $("#whs").val()
+    shipdate = $("#datepicker").val()
+    $('#lines').find('option').remove().end()
+   $.ajax({
+        type: "GET",
+        url: "getShipLines/"+warehouse+"/"+shipdate,        
+        contentType: "application/json",
+        dataType: "json",
+        success: function (response) { 
+            $.each(response, function(key, value){
+                if(value == 'Z210'){
+                    valueLabel = 'Line 3';
+                     $('#lines').append($("<option></option>").attr("value", value).text(valueLabel)); 
+                }
+                else if (value == 'Z524') {
+                    valueLabel = 'Line 2';
+                    $('#lines').append($("<option></option>").attr("value", value).text(valueLabel));
+                }
+                else if (value == 'Z523') {
+                    valueLabel = 'Line 4';
+                    $('#lines').append($("<option></option>").attr("value", value).text(valueLabel));
+                }
+                else{
+                    $('#lines').append($("<option></option>").attr("value", value).text(value)); 
+                }
+            });
+        },
+    });  
+}
+
+$(document).on('click', 'button', e => {
+    $($(e.target).data('target')).toggle(); 
+    txt = $('button').text(); 
+    if(txt == 'Show Build'){
+        $('button').text("Hide Build"); 
+    }
+    else{
+         $('button').text("Show Build"); 
+    }   
+});
+
+function loadData() {
+    var requestObject = {}
+    requestObject['warehouse'] = $("#whs").val()
+    requestObject['line'] = $("#lines").val()
+    requestObject['date'] = $("#datepicker").val()
+    $.ajax({
+        type: "POST",
+        url: "getTargets/",
+        data: JSON.stringify(requestObject),
+        contentType: "application/json",
+        dataType: "json",
+        success: function (response) {           
+            var tableArray = [];
+            var singleObjectArray = [];
+            var palletArraytargetData = [];
+            var t_hd = ''
+            var t_row = '';
+            var targetData = response['targetData'];
+            lastEndTime ='';
+            for(x = 1; x < targetData.length; x++){
+                if(targetData[x][2] == 1){            
+                    targetData[x-1]["lastEndTime"] = targetData[x-1][3];                
+                }
+                if(targetData.length -1 == x){
+                     targetData[x]["lastEndTime"] = targetData[x][3];
+                }
+   
+            }
+            var pallet_timing = response['pallet_timing'];
+            var pallet_timing_ten = response['pallet_timing_ten'];
+            diff(targetData);
+            AvgtimeCalc(targetData);
+            getRemaings(targetData);
+            unitperCalc(targetData);
+            avgTimeTotalBuild(targetData); 
+            itemAvgCalcultor(targetData);
+            if ($("#whs").val() == 'Charlotte' || $("#whs").val() == 'Bloomington') {
+                ZoneTimeAdjust();
+              }
+            t_hd = t_hd + '<table class="table table-hover table-striped" border=1 >'
+            t_hd = t_hd + '<thead><th class="text-left text-warning headerColor">Unit Per Hr</th><th class="text-left text-warning headerColor">Item</th><th class="text-left text-warning headerColor">Pallet</th><th class="text-left text-warning headerColor">Piece</th><th class="text-left text-warning headerColor">Start Time</th><th class="text-left text-warning headerColor">End Time</th><th class="text-left text-warning headerColor">Math</th><th class="text-left text-warning headerColor">Time Per Piece</th><th class="text-left text-warning headerColor">Avg - Rolling 10</th><th class="text-left text-warning headerColor">Avg of Build</th></thead><tbody>'
+            t_close = '</tbody></table>';
+            lastTenUnitsScanned = [];
+            firstAverageCalculated = false;
+            totalUnitsScanned = 0;
+            avgTotalBuildperUnit = 0;
+            allAvgCalculator = [];
+            target=0;
+            var last_target="";
+            var last_avg="";
+            var last_avg_color="";
+            var last_record = "";
+            for_arr = [];
+            for_arr_b = [];
+            for_arr_c = [];
+            for_arr_d = [];
+
+            for (i = 0; i < targetData.length; i++) { 
+                timeTakenToScanUnit = avgCalc(targetData[i][3], targetData[i][4]);
+                lastTenUnitsScanned.push(timeTakenToScanUnit);
+                totalUnitsScanned += timeTakenToScanUnit;
+                if (lastTenUnitsScanned.length >= 10) {
+                    if (firstAverageCalculated == false) {
+                        averageTimePerTenBuild = calculateAverage(lastTenUnitsScanned);
+                        firstAverageCalculated = true;
+                    } else {
+                        lastTenUnitsScanned.shift()
+                        averageTimePerTenBuild = calculateAverage(lastTenUnitsScanned);
+                    }
+
+                } else {
+                    averageTimePerTenBuild = calculateAverage(lastTenUnitsScanned, lastTenUnitsScanned.length);
+                }
+
+                avgTotalBuildperUnit = totalUnitsScanned / (i+1);
+                if (targetData[i][6] > targetData[i][10]) {
+                    cl_name = 'badge bg-danger'
+                } else {
+                    cl_name = 'badge bg-success'
+                }
+                if (targetData[i][8] > targetData[i][11]) {
+                    avgcl_name = 'badge bg-danger'
+                } else {
+                    avgcl_name = 'badge bg-success'
+                }
+                if (targetData[i][15] > 3600) {
+                    totalavgcl_name = 'badge bg-danger'
+                } else {
+                    totalavgcl_name = 'badge bg-success'
+                }
+      
+                style = ""
+            
+                if(targetData[i][2] == 1){ 
+                    style = "bg-info"
+                    t_row +='<tr class=" '+style+'"><td colspan=10 align="center" style="color: white; font-weight:bold;" >'+last_record+'</td></tr>'             
+                    if (i > 0) {
+                        for_arr.push(i-1);
+                        for_arr_b.push('<span class="badge bg-success">00:00:00</span>');
+                        for_arr_c.push('<span class="badge bg-success">00:00:00</span>');
+                        for_arr_d.push('<span class="' + last_avg_color + '">' + last_avg + '</span>');
+                    }
+                    
+                }
+                last_record = targetData[i][7];
+                last_target = Math.round(pallet_timing[targetData[i][0]][i]['sec'])
+                last_avg = pallet_timing[targetData[i][0]][i]['time']
+                last_avg_color = pallet_timing[targetData[i][0]][i]['color']
+                t_row += '<tr class="rows  "><td><span>' + targetData[i][5] + '</span></td><td><span>' +targetData[i][1] + '</span></td><td><span>' + targetData[i][0] + '</span></td><td><span>' + targetData[i][2] + '</span></td><td><span>' + ZoneTimeAdjust(targetData[i][3]) + '</span></td><td><span>' + ZoneTimeAdjust(targetData[i][4]) + '</span></td><td id="a-'+i+'"><span class="' + cl_name + '" >' + ('0' + targetData[i][6]).slice(-2) + ' / '+ last_target +' </span></td><td id="b-'+i+'"><span class="' + cl_name + '">' + targetData[i][7] + '</span></td><td id="c-'+i+'"><span class="' + pallet_timing_ten[targetData[i][0]][i]['color'] + '">' + pallet_timing_ten[targetData[i][0]][i]['time'] + '</span></td><td id="d-'+i+'"><span class="' + last_avg_color + '">' + last_avg + '</span></td></tr>'
+                if (targetData[i][6] >= 1500 && targetData[i][6] <= 2700) {
+                    style = "bg-success"
+                    t_row += '<tr class=" ' + style + '"><td colspan=10 align="center" style="color: white; font-weight:bold;" >Lunch Break : '+ targetData[i][7] +'</td></tr>' 
+                }
+                if( targetData[i][6] > 2700){
+                    style = "bg-danger"
+                    t_row += '<tr class=" ' + style + '"><td colspan=10 align="center" style="color: white; font-weight:bold;" >Over Due : ' + targetData[i][7] + '</td></tr>'
+                }
+            }
+          
+            document.getElementById("t_data").innerHTML = t_hd + t_row + t_close
+            $("tbody").each(function(elem,index){
+                    var arr = $.makeArray($("tr",this).detach());
+                    arr.reverse();
+                    $(this).append(arr);
+            });
+
+            for (i = 0; i < for_arr.length; i++) {  
+                document.getElementById("a-"+for_arr[i]).innerHTML =  '<span class="badge bg-success">00/00</span>';
+                document.getElementById("b-"+for_arr[i]).innerHTML =  for_arr_b[i];
+                document.getElementById("c-"+for_arr[i]).innerHTML =  for_arr_c[i];
+                document.getElementById("d-"+for_arr[i]).innerHTML =  for_arr_c[i];
+            }
+        },
+    });
+}
+
+
+function itemAvgCalcultor(targetData){
+    itemList = {};
+    LBreaktime = 0;
+    targetData.forEach(function (r, i) {
+        if (r[1] in itemList) {  
+            itemList[r[1]]['unitCount'] = itemList[r[1]]['unitCount'] + 1;            
+            if(r['lastEndTime'] != undefined){   
+                itemList[r[1]]['endtime'] = r['lastEndTime'];
+                itemList[r[1]]['cumulativeTime'] += avgCalc(r[3], r['lastEndTime']);               
+            }  
+            else{
+                itemList[r[1]]['cumulativeTime'] += avgCalc(r[3], r[4]);    
+            }          
+            if(r[2] == 1){
+               itemList[r[1]]['breaktime'].push(LBreaktime);
+            }
+            if(r[6] >= 1500 && r[6] <= 2700){
+                LBreaktime = 0;
+                //   itemList[r[1]]['breaktime'].push(r[6]);  
+            }
+            else{
+                LBreaktime = r[6];
+            }
+        } else {
+            itemList[r[1]] = { 'itemId': r[1], 'unitCount': 1, 'pallets': [], 'startTime': r[3], 'endtime': r[4], 'target': r[5] , 'breaktime': [LBreaktime], 'cumulativeTime': avgCalc(r[3], r[4]) }          
+        }
+    });
+    console.log(itemList)
+    tablehead ="";
+    tablerow ="";
+    tablerowL ="";
+    tableclose ="";
+    tablehead = tablehead + '<table class="table table-hover table-striped" border=1 >'
+    tablehead = tablehead + '<thead><th class="text-left text-warning headerColor">ItemID</th><th class="text-left text-warning headerColor">Finished Units</th><th class="text-left text-warning headerColor">Start Time</th><th class="text-left text-warning headerColor">End Time</th><th class="text-left text-warning headerColor">Total Chang Over Time</th><th class="text-left text-warning headerColor">Total Time Taken</th><th class="text-left text-warning headerColor">Active Time</th><th class="text-left text-warning headerColor">Act Avg Time Per Unit</th><th class="text-left text-warning headerColor">Taken Avg Time Per Unit</th><th class="text-left text-warning headerColor">One Unit Sec</th></thead><tbody>'
+    tableclose = '</tbody></table>';
+
+
+    percentTimeTaken = 0;
+    totalBreakTime = 0;
+    overdueTime = 0;
+    for (const [key, value] of Object.entries(itemList)) {    
+        breaktime = 0;
+        totalTimeTaken = 0;
+        timeBadge = ''; classs ='';
+        value.breaktime.forEach(function(r){
+          breaktime +=r
+        }); 
+        if(breaktime > 2700 ){
+          timeBadge  = "animation:blink 1s infinite;";
+          classs = "badge bg-danger"
+          overdueTime += breaktime
+        }
+         if (breaktime > 1500 && breaktime < 2700) {
+            // timeBadge = "animation:blink 1s infinite;";
+            classs = "badge bg-success"
+            overdueTime += breaktime
+        }
+        
+        // timeTaken  = avgCalc(value.startTime, value.endtime)
+        timeTaken = value.cumulativeTime;
+        percentTimeTaken += timeTaken;
+        totalTimeTaken = timeTaken+breaktime;   
+        totalBreakTime += breaktime;
+        console.log(overdueTime);
+        tablerow += '<tr class="rows  "><td>'+value.itemId+'</td><td>' + value.unitCount +'</td><td>' + value.startTime +'</td><td>' + value.endtime +'</td><td><span class="'+classs+'"style="'+timeBadge+'">' + formatSeconds(breaktime) +'</span></td><td>' + formatSeconds(totalTimeTaken) +'</td><td>' + formatSeconds(timeTaken) +'</td><td>' + formatSeconds((Math.abs(timeTaken / value.unitCount))) +'</td><td>' + formatSeconds(Math.abs(totalTimeTaken) / value.unitCount) +'</td><td>'+Math.round((60/value.target)*60)+'</td></tr>'
+    }  
+   
+    console.log(percentTimeTaken);
+     tablerowL += '<tr class="rows" style="font-size:15pt;font-weight: 700;background-color: navajowhite;"><td></td><td></td><td></td><td class="text-danger">Change Over:</td><td class="text-danger">'+formatSeconds(totalBreakTime)+'</td><td class="text-danger">Total : </td><td class="text-danger">' + formatSeconds(percentTimeTaken) + '</td><td class="text-danger">Avg-Per/Day: </td><td class="text-danger">'+Math.round((percentTimeTaken/(28800-overdueTime))*100)+'%</td><td></td></tr>';
+
+    document.getElementById("inner-table").innerHTML = tablehead + tablerowL + tablerow + tableclose;
+}
+
+function unitperCalc(targetData) {
+    for (k = 0; k < targetData.length; k++) {
+        unitperHr = (targetData[k][5] / 60)
+        unitpersec = (60 / unitperHr)
+        int10 = (unitpersec * 10);
+        targetData[k].push(unitpersec)
+        targetData[k].push(int10)
+        targetData[k].push(formatSeconds(unitpersec))
+        targetData[k].push(formatSeconds(int10))
+    }
+
+}
+RemaininAVg = 0
+function getRemaings(targetData) {
+    remining = (targetData.length / 10).toString();
+    lastString = remining.split('.')
+    for (i = ((targetData.length) - (1)); i >= ((targetData.length) - (lastString[1])); i--) {
+        RemaininAVg += avgCalc(targetData[i][3], targetData[i][4])
+    }
+    for (j = ((targetData.length) - (1)); j >= ((targetData.length) - (lastString[1])); j--) {
+        targetData[j].push(RemaininAVg)
+        targetData[j].push(formatSeconds(RemaininAVg))
+    }
+}
+
+AvgtotalCal = 0;
+function avgTimeTotalBuild(targetData) {
+    for (i = 0; i < targetData.length; i++) {
+        AvgtotalCal += avgCalc(targetData[i][3], targetData[i][4])
+    }
+    for (j = 0; j < targetData.length; j++) {
+        // targetData[j].push(AvgtotalCal)
+        targetData[j].push(formatSeconds(AvgtotalCal))
+        targetData[j].push(AvgtotalCal)
+    }
+}
+
+AvgtotalBuildCal = 0;
+function avgTimeTotalBuild(targetData) {
+    for (i = 0; i < targetData.length; i++) {
+        AvgtotalBuildCal += avgCalc(targetData[i][3], targetData[i][4])
+    }
+    for (j = 0; j < targetData.length; j++) {
+        // targetData[j].push(AvgtotalCal)
+        targetData[j].push(formatSeconds(AvgtotalBuildCal))
+        targetData[j].push(AvgtotalBuildCal)
+    }
+}
+
+total10Cal = 0;
+function AvgtimeCalc(targetData) {
+    for (i = 0; i < targetData.length; i++) {
+        total10Cal += avgCalc(targetData[i][3], targetData[i][4])
+        if ((i % 10) === 0) {
+            if (i != 0) {
+                for (j = (i - 1); j >= (i - 10); j--) {
+                    targetData[j].push(total10Cal)
+                    targetData[j].push(formatSeconds(total10Cal))
+                }
+            }
+            total10Cal = 0;
+        }
+    }
+}
+
+function avgCalc(start, end) {
+    var a = start.split(':');
+    var b = end.split(':');
+    var startseconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
+    var endseconds = (+b[0]) * 60 * 60 + (+b[1]) * 60 + (+b[2]);
+    diffSeconds = (endseconds - startseconds);
+    return diffSeconds
+}
+
+
+function diff(targetData) {
+    // var start = '02:04:33'; 
+    // var end = '03:07:35';  
+    for (m = 0; m < targetData.length; m++) {
+        var a = targetData[m][3].split(':');
+        var b = targetData[m][4].split(':');
+        var startseconds = (+a[0]) * 60 * 60 + (+a[1]) * 60 + (+a[2]);
+        var endseconds = (+b[0]) * 60 * 60 + (+b[1]) * 60 + (+b[2]);
+        diffSeconds = (endseconds - startseconds);
+        targetData[m].push(diffSeconds);
+        targetData[m].push(formatSeconds(diffSeconds));
+    }
+}
+
+function ZoneTimeAdjust(time) {
+
+    if(time != undefined){
+        var a = time.split(':');
+        var incTime = 0;
+        if ($("#whs").val() == 'Charlotte') {
+            incTime = 3;
+        }
+        if ($("#whs").val() == 'Bloomington') {
+            incTime = 2;
+        }  
+        hr = Number(a[0]) + Number(incTime);
+        mn = a[1];
+        sec = a[2];
+        modifiedTime = hr + ':' + mn + ':' + sec;
+        return modifiedTime;
+    }
+    else{
+        return time;
+    }
+}
+
+function calculateAverage(scannedUnits, n = 10) {
+
+    // Find sum of array element
+    var sum = 0;
+    for (var i = 0; i < n; i++) sum += scannedUnits[i];
+
+    return parseFloat(sum / n);
+}
+
+const formatSeconds = s => (new Date(s * 1000)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0];
+
+</script>
