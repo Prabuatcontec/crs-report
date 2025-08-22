@@ -3,12 +3,12 @@
 Build the Docker image manually by cloning the Git repo.
 ```
  
-$ docker build -t contec/deepblu-report .
+$ docker build -t contec/crs-report .
 ```
 
 ### Download precreated image
  
 ```
-docker rm deepblu-report && docker run -e TZ=America/Los_Angeles --name deepblu-report -v C:/Users/mprabu/Projects/deepblu-report:/app -p 8989:8989 contec/deepblu-report
+docker rm crs-report && docker run -e TZ=America/Los_Angeles --name crs-report -v C:/Users/mprabu/Projects/crs-report:/app -p 8990:8990 contec/crs-report
 ```
  
