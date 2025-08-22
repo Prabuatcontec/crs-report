@@ -73,7 +73,17 @@ def index_crs_q4wh():
         inner join RepairStatus r on p.SN = r.SN and CRSModelName like 'CRSF%' \
         inner join WorkSites W on W.SiteID = r.SiteID  \
         where date(p.Processed) BETWEEN '"+dateFrom+" 00:00:00' and '"+dateTo+" 23:59:59' "+qrWarehose+"    \
-        GROUP BY W.SiteID, date(p.Processed)) as s Order by SiteName, Date , Defect";
+        GROUP BY W.SiteID, date(p.Processed) \
+        UNION ALL \
+        select  \
+        CASE \
+        WHEN StationId LIKE 'CLD%' THEN 'Charlotte' \
+        WHEN StationId LIKE 'BRD%' THEN 'Brownsvelli' \
+        WHEN StationId LIKE 'SJD%' THEN 'San Jose' \
+        ELSE 'Charlotte' \
+        END AS SiteName , date(p.Processed) as Date ,'AWAP' as Defect, count(*) count from ProductionHub  p \
+        where   StationId LIKE '%CLD-FTR%' AND StationType = 'AWAP'   AND date(p.Processed) BETWEEN '"+dateFrom+" 00:00:00' and '"+dateTo+" 23:59:59' "+qrWarehose+"\
+        GROUP BY   date(p.Processed) ) as s Order by SiteName, Date , Defect";
          
         conn = mysql.connect()
         cursor = conn.cursor()
