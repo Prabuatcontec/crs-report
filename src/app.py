@@ -29,7 +29,17 @@ import requests
 from flask_apscheduler import APScheduler
 from time import gmtime, strftime
 import math
- 
+
+@app.route("/fedex", methods=["GET"])
+def fedex_token():
+    post_url = 'https://apis-sandbox.fedex.com/oauth/token'
+    payload = {'grant_type': 'client_credentials', 'client_id': 'l7d544510142e44365a5c83b4c1b5fcdb5', 'client_secret': 'afe5fcec9e7e439096025f8afdc55c86'}
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    response = requests.post(post_url, data=payload, headers=headers)
+    print(f"Status Code: {response.status_code}")
+    print(f"Response Body: {response.text}")
+    return response.json() 
+
 @app.route("/crs/q4")
 def index_crs_q4wh():
         from werkzeug.datastructures import ImmutableMultiDict
