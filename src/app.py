@@ -30,13 +30,32 @@ from flask_apscheduler import APScheduler
 from time import gmtime, strftime
 import math
 
-@app.route("/fedex", methods=["POST"])
+@app.route("/fedex/token", methods=["POST"])
 def fedex_token():
     flat_dict = request.form.to_dict(flat=True) 
-    print(flat_dict);
+    
     post_url = 'https://apis-sandbox.fedex.com/oauth/token'
-    payload = {'grant_type': 'client_credentials', 'client_id': 'l7d544510142e44365a5c83b4c1b5fcdb5', 'client_secret': 'afe5fcec9e7e439096025f8afdc55c86'}
+    payload = flat_dict
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    response = requests.post(post_url, data=payload, headers=headers)
+    print(f"Status Code: {response.status_code}")
+    print(f"Response Body: {response.text}")
+    return response.json() 
+
+
+@app.route("/fedex/rates", methods=["POST"])
+def fedex_rates():
+    flat_dict = request.form.to_dict(flat=True) 
+    print(flat_dict);
+    all_headers = request.headers
+    response_headers = all_headers
+    print(response_headers.to_dict(flat=True) )
+    for header, value in response_headers.items():
+        print("================>>>>>>>>>")
+        print(f"{header}: {value}")
+    post_url = 'https://apis-sandbox.fedex.com/fedex/rates'
+    payload = flat_dict
+    headers = response_headers.to_dict(flat=True) 
     response = requests.post(post_url, data=payload, headers=headers)
     print(f"Status Code: {response.status_code}")
     print(f"Response Body: {response.text}")
