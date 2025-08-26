@@ -65,8 +65,29 @@ def fedex_shipments():
     post_url = 'https://apis-sandbox.fedex.com/ship/v1/shipments'
     payload = flat_dict
     headers = {'Content-Type': 'application/json',
+               'X-locale': "en_US",
                'Authorization': authorization} 
     print(payload)
+    payload["labelSpecification"] = {
+            "labelFormatType": "COMMON2D",
+            "labelOrder": "SHIPPING_LABEL_FIRST",
+            "printedLabelOrigin": {},
+            "labelStockType": "PAPER_7X475",
+            "labelRotation": "UPSIDE_DOWN",
+            "imageType": "PDF",
+            "customerSpecifiedDetail": {
+                "maskedData": [],
+                "regulatoryLabels": [
+                    {
+                        "generationOptions": "CONTENT_ON_SHIPPING_LABEL_ONLY",
+                        "type": "ALCOHOL_SHIPMENT_LABEL"
+                    }
+                ],
+                "additionalLabels": [],
+                "docTabContent": {}
+            },
+            "resolution": 300
+        }
     print(headers)
     response = requests.post(post_url, json=payload, headers=headers)
     print(f"Status Code: {response.status_code}")
