@@ -45,18 +45,30 @@ def fedex_token():
 
 @app.route("/fedex/rates", methods=["POST"])
 def fedex_rates():
-    flat_dict = request.form.to_dict(flat=True) 
-    print(flat_dict);
-    all_headers = request.headers
-    response_headers = all_headers
-    print(response_headers.to_dict(flat=True) )
-    for header, value in response_headers.items():
-        print("================>>>>>>>>>")
-        print(f"{header}: {value}")
+    flat_dict = request.json 
+    authorization = request.headers.get('Authorization')
+    
     post_url = 'https://apis-sandbox.fedex.com/fedex/rates'
     payload = flat_dict
-    headers = response_headers.to_dict(flat=True) 
-    response = requests.post(post_url, data=payload, headers=headers)
+    headers = {'Content-Type': 'application/json',
+               'Authorization': authorization} 
+    response = requests.post(post_url, json=payload, headers=headers)
+    print(f"Status Code: {response.status_code}")
+    print(f"Response Body: {response.text}")
+    return response.json() 
+
+@app.route("/fedex/shipments", methods=["POST"])
+def fedex_shipments():
+    flat_dict = request.json 
+    authorization = request.headers.get('Authorization')
+    
+    post_url = 'https://apis-sandbox.fedex.com/ship/v1/shipments'
+    payload = flat_dict
+    headers = {'Content-Type': 'application/json',
+               'Authorization': authorization} 
+    print(payload)
+    print(headers)
+    response = requests.post(post_url, json=payload, headers=headers)
     print(f"Status Code: {response.status_code}")
     print(f"Response Body: {response.text}")
     return response.json() 
@@ -146,7 +158,86 @@ def index_crs_q4wh():
                 defect[str(res[0])][str(res[1])]["total"] = res[3]
         dbserials.append(defect)
         return dbserials
+
+@app.route("/crs/testing")
+def index_crs_testing_q4wh():
+        from werkzeug.datastructures import ImmutableMultiDict
+        dateFrom = None
+        dateTo = None
+        warehouse = None
+        customer = None 
+        flat_dict = request.args.to_dict(flat=True) 
+        print(flat_dict)
+        if 'dateFrom' in flat_dict:
+            dateFrom = flat_dict['dateFrom']
+        if 'dateTo' in flat_dict:
+            dateTo = flat_dict['dateTo']
+
+        if 'warehouse' in flat_dict:
+            warehouse = flat_dict['warehouse']
+        if 'customer' in flat_dict:
+            customer = flat_dict['customer']
+        qrOperator = ""
+        if 'operator' in flat_dict:
+            operator = flat_dict['operator']
+            qrOperator = " AND Operator='"+operator+"'"
+        qrWarehose = ""
+        if warehouse is not None:
+            qrWarehose = " AND SiteName='"+warehouse+"'"
+            
+        qrCustomer = ""
+        if customer is not None:
+            qrCustomer = " AND Customers.BillName='"+customer+"'"
+        now = datetime.now() 
+       
+        if dateFrom is None:
+            dateFrom = now.strftime("%Y-%m-%d")
+        if dateTo is None:
+            dateTo = now.strftime("%Y-%m-%d")
+        sql = "Select \
+  SiteName as warehouse, Operator as operator, \
+  Station, \
+  Customers.BillName Customer, \
+  Model, \
+  TestResult Result, \
+  FailureMsg Failure, \
+  count(1) count \
+from \
+  TestResults \
+  JOIN Customers ON Customers.CustomerID = TestResults.CustomerID \
+  inner join WorkSites W on W.SiteID = TestResults.SiteID   \
+where \
+  TestDate   BETWEEN '"+dateFrom+" 00:00:00' and '"+dateTo+" 23:59:59' "+qrWarehose+" "+qrCustomer+" "+qrOperator+"  \
+GROUP BY \
+SiteName, \
+  Operator, \
+  Station, \
+  Customers.BillName, \
+  Model, \
+  TestResult, \
+  FailureMsg";
+         
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        data_added = cursor.fetchall()
+        dbserials = [] 
+        
+        
+        for res in data_added: 
+            defect = {}
+            defect['warehouse'] = res[0]
+            defect['operator'] = res[1]
+            defect['station'] = res[2]
+            defect['customer'] = res[3]
+            defect['model'] = res[4]
+            defect['result'] = res[5]
+            defect['failure'] = res[6]
+            defect['count'] = res[7]
+            dbserials.append(defect)
+        return dbserials
          
  
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8990, debug=True)
