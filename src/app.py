@@ -198,7 +198,7 @@ def index_crs_testing_q4wh():
   SiteName as warehouse, Operator as operator, \
   Station, \
   Customers.BillName Customer, \
-  Model, \
+  Model , DATE(TestDate), HOUR(TestDate) ,  \
   TestResult Result, \
   FailureMsg Failure, \
   count(1) count \
@@ -213,7 +213,7 @@ SiteName, \
   Operator, \
   Station, \
   Customers.BillName, \
-  Model, \
+  Model, DATE(TestDate), HOUR(TestDate) , \
   TestResult, \
   FailureMsg";
          
@@ -231,9 +231,11 @@ SiteName, \
             defect['station'] = res[2]
             defect['customer'] = res[3]
             defect['model'] = res[4]
-            defect['result'] = res[5]
-            defect['failure'] = res[6]
-            defect['count'] = res[7]
+            defect['date'] = res[5]
+            defect['hour'] = res[6]
+            defect['result'] = res[7]
+            defect['failure'] = res[8]
+            defect['count'] = res[9]
             dbserials.append(defect)
         return dbserials
          
