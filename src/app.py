@@ -102,7 +102,7 @@ def index_crs_q4wh():
         warehouse = None
         customer = None 
         flat_dict = request.args.to_dict(flat=True) 
-        print(flat_dict)
+        
         if 'dateFrom' in flat_dict:
             dateFrom = flat_dict['dateFrom']
         if 'dateTo' in flat_dict:
@@ -155,8 +155,7 @@ def index_crs_q4wh():
         END AS SiteName , date(p.Processed) as Date ,'AWAP' as Defect, count(*) count from ProductionHub  p \
         where   StationId LIKE '%"+stationId+"-FTR%' AND StationType = 'AWAP'   AND date(p.Processed) BETWEEN '"+dateFrom+" 00:00:00' and '"+dateTo+" 23:59:59' " "\
         GROUP BY   date(p.Processed) ) as s Order by SiteName, Date , Defect";
-         
-        conn = mysql.connect()
+        conn = mysql.connect()  
         cursor = conn.cursor()
         cursor.execute(sql)
         data_added = cursor.fetchall()
@@ -171,12 +170,13 @@ def index_crs_q4wh():
             if str(res[2]) != "Total": 
                 if "defect" not in defect[str(res[0])][str(res[1])]: 
                     defect[str(res[0])][str(res[1])]["defect"]  = {}
-                    defect[str(res[0])][str(res[1])]["total"]  = 0
                 
                 if str(res[1]) not in defect[res[0]][str(res[1])]["defect"]:
                     defect[str(res[0])][str(res[1])]["defect"][str(res[2])] = res[3]
             if str(res[2]) == "Total": 
                 defect[str(res[0])][str(res[1])]["total"] = res[3]
+            if "total" not in defect[str(res[0])][str(res[1])]:
+                defect[str(res[0])][str(res[1])]["total"]  = 0
         dbserials.append(defect)
         return dbserials
 
