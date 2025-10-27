@@ -259,6 +259,30 @@ SiteName, \
             defect['count'] = res[9]
             dbserials.append(defect)
         return dbserials
+
+
+
+@app.route("/crs/check_status/certificate")
+def index_crs_testing_q4_certificate_wh():
+        from werkzeug.datastructures import ImmutableMultiDict
+        dateFrom = None
+        dateTo = None
+        warehouse = None
+        customer = None 
+        flat_dict = request.args.to_dict(flat=True) 
+        Sn = None
+        if 'sn' in flat_dict:
+            Sn = flat_dict['sn']
+        sql = " Select count(1) from CRS_Prod.TestResults where  Details Like '%XFN_NVG_CERT_SET_GET%' AND Sn ='"+Sn+"'";
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        data_added = cursor.fetchall()
+        dbserials = [] 
+        print(data_added);
+        for res in data_added: 
+            return {"result": res[0]}
+        return {"result": 0}
          
  
 
