@@ -294,12 +294,18 @@ def index_crs_testing_update_certificate_wh():
             dateFrom = now.strftime("%Y-%m-%d %H:%M:%S")
             sql = "CALL sp_insert_missing_certificate_NVG("\
             "'"+dateFrom+"',741,'P', 'XFN_NVG_CERT_SET_GET','2','"+str(sn)+"');"; 
-         
+        
+        
         conn = mysql.connect()
         cursor = conn.cursor()
+        
         try:
-            cursor.execute(sql) 
-            return {"result": data['sn']}
+            res = cursor.callproc('sp_insert_missing_certificate_NVG', (str(dateFrom),741, 'P', 'XFN_NVG_CERT_SET_GET', '2', str(sn)))
+            print("============")
+            print(res)
+            print("============")
+            #cursor.execute(sql) 
+            return {"result": sn}
         except:
               return {"result": "Unable to Save"}
 
