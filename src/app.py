@@ -283,6 +283,27 @@ def index_crs_testing_q4_certificate_wh():
         for res in data_added: 
             return {"result": res[0]}
         return {"result": 0}
+
+
+@app.route("/crs/update_status/certificate", methods=["POST"])
+def index_crs_testing_update_certificate_wh():
+        data = request.json
+        now = datetime.now()
+        if 'sn' in data:
+            sn = data['sn']
+            dateFrom = now.strftime("%Y-%m-%d %H:%M:%S")
+            sql = "CALL sp_insert_missing_certificate_NVG("\
+            "'"+dateFrom+"',741,'P', 'XFN_NVG_CERT_SET_GET','2','"+str(sn)+"');"; 
+         
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(sql) 
+            return {"result": data['sn']}
+        except:
+              return {"result": "Unable to Save"}
+
+
          
  
 
