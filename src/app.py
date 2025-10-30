@@ -301,6 +301,7 @@ def index_crs_testing_update_certificate_wh():
         
         try:
             res = cursor.callproc('sp_insert_missing_certificate_NVG', (str(dateFrom),741, 'P', 'XFN_NVG_CERT_SET_GET', '2', str(sn)))
+            conn.commit()
             print("============")
             print(res)
             print("============")
